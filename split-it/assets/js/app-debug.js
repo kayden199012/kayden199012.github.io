@@ -360,6 +360,7 @@ function showConfirm() {
 }
 var AccountSharing = /*#__PURE__*/function () {
   function AccountSharing(array) {
+    var _this4 = this;
     _classCallCheck(this, AccountSharing);
     var defs = {
       members: [
@@ -439,11 +440,24 @@ var AccountSharing = /*#__PURE__*/function () {
     this.init();
     this.memberController();
     this.purchaseController();
+    $('#reset').on('click', function () {
+      showConfirm({
+        text: "確認要重置已新增內容？",
+        then: function then() {
+          _this4.members = [];
+          _this4.purchase = [];
+          _this4.resetHtml();
+          _this4.updatePurchaseMemberOptions();
+          _this4.updateMemberCost();
+          _this4.updateTotal();
+        }
+      });
+    });
   }
   _createClass(AccountSharing, [{
     key: "init",
     value: function init() {
-      var _this4 = this;
+      var _this5 = this;
       if (this.members.length > 0) {
         $("#member-list .empty").hide();
         var html = this.html.member;
@@ -456,8 +470,8 @@ var AccountSharing = /*#__PURE__*/function () {
         $("#purchase-list .empty").hide();
         var _html = this.html.purchase;
         this.purchase.forEach(function (e) {
-          var member_name = _this4.getMemberName(e.member);
-          var complete_html = _html.replace(/{{title}}/g, e.title).replace(/{{price}}/g, e.price).replace(/{{member}}/g, member_name).replace(/{{sharing}}/g, _this4.options.sharing[e.sharing]).replace(/{{idx}}/g, e.idx);
+          var member_name = _this5.getMemberName(e.member);
+          var complete_html = _html.replace(/{{title}}/g, e.title).replace(/{{price}}/g, e.price).replace(/{{member}}/g, member_name).replace(/{{sharing}}/g, _this5.options.sharing[e.sharing]).replace(/{{idx}}/g, e.idx);
           $('#purchase-list').append(complete_html);
         });
       }
@@ -506,15 +520,15 @@ var AccountSharing = /*#__PURE__*/function () {
       });
       // 刪除
       $(document).on("click", "#member-list .group .delete", function () {
-        var _this5 = this;
+        var _this6 = this;
         showConfirm({
           title: "是否要刪除此成員？",
           text: "刪除後會將此家庭/成員的消費項目一並刪除",
           then: function then() {
-            var idx = $(_this5).data('idx');
+            var idx = $(_this6).data('idx');
             $this.members.forEach(function (e, index) {
               if (e.idx == idx) {
-                $(_this5).closest('.group').remove();
+                $(_this6).closest('.group').remove();
                 $this.members.splice(index, 1);
               }
             });
@@ -581,14 +595,14 @@ var AccountSharing = /*#__PURE__*/function () {
       });
       // 刪除
       $(document).on("click", "#purchase-list .group .delete", function () {
-        var _this6 = this;
+        var _this7 = this;
         showConfirm({
           title: "是否要刪除此消費記錄？",
           then: function then() {
-            var idx = $(_this6).data('idx');
+            var idx = $(_this7).data('idx');
             $this.purchase.forEach(function (e, index) {
               if (e.idx == idx) {
-                $(_this6).closest('.group').remove();
+                $(_this7).closest('.group').remove();
                 $this.purchase.splice(index, 1);
               }
             });
@@ -631,10 +645,10 @@ var AccountSharing = /*#__PURE__*/function () {
   }, {
     key: "cleanPurchase",
     value: function cleanPurchase(idx) {
-      var _this7 = this;
+      var _this8 = this;
       this.purchase.forEach(function (e, index) {
         if (idx == e.member) {
-          _this7.purchase.splice(index, 1);
+          _this8.purchase.splice(index, 1);
           $('#purchase-list .group').eq(index).remove();
         }
       });
@@ -646,14 +660,15 @@ var AccountSharing = /*#__PURE__*/function () {
   }, {
     key: "updateMemberCost",
     value: function updateMemberCost() {
-      var _this8 = this;
+      var _this9 = this;
       var member_qty_total = 0;
+      $('.member-cost').html('');
       if (this.members.length > 0) {
         var member = "";
         this.members.forEach(function (e, idx) {
           member += "<h6 class=\"mb-2\">" + e.title + "\uFF1A<span id=\"cost-" + e.idx + "\">0</span></h6>";
-          _this8.members[idx].cost = 0;
-          _this8.members[idx].pay = 0;
+          _this9.members[idx].cost = 0;
+          _this9.members[idx].pay = 0;
           member_qty_total += parseInt(e.qty);
         });
         $('.member-cost').html(member);
@@ -672,15 +687,15 @@ var AccountSharing = /*#__PURE__*/function () {
               total_1 += parseInt(e.price);
               break;
           }
-          _this8.members.forEach(function (m_e, idx) {
+          _this9.members.forEach(function (m_e, idx) {
             if (m_e.idx == e.member) {
-              _this8.members[idx].cost += parseInt(e.price);
+              _this9.members[idx].cost += parseInt(e.price);
             }
           });
         });
         this.members.forEach(function (e, idx) {
           $("#cost-" + e.idx).text(e.cost);
-          _this8.members[idx].pay += Math.round(total_0 / member_qty_total) * e.qty + Math.round(total_1 / _this8.members.length) - e.cost;
+          _this9.members[idx].pay += Math.round(total_0 / member_qty_total) * e.qty + Math.round(total_1 / _this9.members.length) - e.cost;
         });
         var n = 0;
         var pay_history = [];
@@ -716,7 +731,7 @@ var AccountSharing = /*#__PURE__*/function () {
         if (pay_history.length > 0) {
           var history_html = "";
           pay_history.forEach(function (e) {
-            history_html += _this8.html.history.replace(/{{from}}/g, e.from).replace(/{{to}}/g, e.to).replace(/{{price}}/g, e.price);
+            history_html += _this9.html.history.replace(/{{from}}/g, e.from).replace(/{{to}}/g, e.to).replace(/{{price}}/g, e.price);
           });
           $("#sharing-result .group").remove();
           $("#sharing-result .empty").hide().before(history_html);
@@ -736,6 +751,11 @@ var AccountSharing = /*#__PURE__*/function () {
         total += parseInt(e.price);
       });
       $('#total').text(total);
+    }
+  }, {
+    key: "resetHtml",
+    value: function resetHtml() {
+      $('#member-list .empty, #purchase-list .empty, #sharing-result .empty').show().siblings('.group').remove();
     }
   }]);
   return AccountSharing;
