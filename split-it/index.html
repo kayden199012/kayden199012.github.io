@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧分帳小工具</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@200..900&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/vendors/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./assets/vendors/bootstrap/icon/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="./assets/vendors/sweetalert2/sweetalert2.min.css">
+    <link rel="stylesheet" href="./assets/vendors/animate/animate.min.css">
+    <link rel="stylesheet" href="./assets/css/app.css">
+    <script src="./assets/js/jquery.min.js"> </script>
+    <script src="./assets/vendors/bootstrap/js/bootstrap.bundle.min.js"> </script>
+    <script src="./assets/vendors/sweetalert2/sweetalert2.all.min.js"> </script>
+    <script src="./assets/js/app.js"> </script>
+  </head>
+  <body class="bg-light"> 
+    <div class="py-4" id="wrap">
+      <div class="container">
+        <div class="head text-center">
+          <h1>智慧分帳小工具</h1>
+          <p class="text-danger fs-6">幫你解決出去玩不知道要怎麼和朋友分帳</p>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <!-- 標頭 -->
+            <h5 class="card-title mb-3">
+              家庭/成員
+              <p class="pt-2 mb-0 fs-6 text-secondary">新增家族/成員，並且輸入家族需分擔的人頭數</p>
+            </h5>
+            <div class="d-flex justify-content-between align-items-start gap-3" id="add-member-form">
+              <div class="col-8 flex-shrink-1">
+                <div class="input-group flex-nowrap">
+                  <span class="input-group-text" id=""><i class="bi bi-house-fill"></i></span>
+                  <input id="member-title" type="text" class="form-control" placeholder="家庭/成員名稱" aria-label="家庭/成員名稱" aria-describedby="" required value="">
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="input-group flex-nowrap">
+                  <span class="input-group-text" id=""><i class="bi bi-people-fill"></i></span>
+                  <input id="member-qty" type="number" min="1" class="form-control" placeholder="分擔人數" aria-label="分擔人數" aria-describedby="" inputmode="numeric" required value="">
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary flex-shrink-0" id="add-member"><i class="bi bi-plus-circle-fill"></i> 新增</button>
+            </div>
+            <hr>
+            <!-- 內容 -->
+            <div id="member-list" class="d-flex flex-column gap-2">
+              <p class="card empty text-center m-0 bg-light p-3">尚未新增家庭/成員</p>
+            </div>
+          </div>
+        </div>
+        <div class="card mt-3">
+          <div class="card-body">
+            <!-- 標頭 -->
+            <h5 class="card-title mb-3">
+              消費清單
+              <p class="pt-2 mb-0 fs-6 text-secondary">新增消費內容</p>
+            </h5>
+            <div class="row g-3" id="add-purchase-form">
+              <div class="col-6">
+                <div class="input-group flex-nowrap">
+                  <span class="input-group-text" id=""><i class="bi bi-cart-fill"></i></span>
+                  <input id="purchase-title" type="text" class="form-control" placeholder="消費名稱" aria-label="消費名稱" aria-describedby="" required value="">
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="input-group flex-nowrap">
+                  <span class="input-group-text" id=""><i class="bi bi-currency-dollar"></i></span>
+                  <input id="purchase-price" type="number" min="1" class="form-control" placeholder="金額" aria-label="金額" aria-describedby="" inputmode="numeric" required value="">
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="input-group flex-nowrap">
+                  <span class="input-group-text" id=""><i class="bi bi-house-fill"></i></span>
+                  <select class="form-select" id="purchase-member">
+                    <option value="">付費家庭/成員</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="input-group flex-nowrap">
+                  <span class="input-group-text" id=""><i class="bi bi-calculator-fill"></i></span>
+                  <select class="form-select" id="purchase-sharing">
+                    <option value="">分帳方式</option>
+                    <option value="0">家庭人數</option>
+                    <option value="1">家庭</option>
+                  </select>
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary flex-shrink-0" id="add-purchase"><i class="bi bi-plus-circle-fill"></i> 新增</button>
+            </div>
+            <hr>
+            <!-- 內容 -->
+            <div id="purchase-list" class="d-flex flex-column gap-2">
+              <p class="card empty text-center m-0 bg-light p-3">尚未新增消費紀錄</p>
+            </div>
+            <hr>
+            <div class="member-cost">
+
+            </div>
+            <h6 class="m-0">總花費：<span id="total">0</span></h6>
+          </div>
+        </div>
+        <div class="card mt-3">
+          <div class="card-body">
+            <!-- 標頭 -->
+            <h5 class="card-title mb-3">
+              分帳結果
+            </h5>
+            <hr>
+            <!-- 內容 -->
+            <div id="sharing-result" class="d-flex flex-column gap-2">
+              <p class="card empty text-center m-0 bg-light p-3">尚未新增消費紀錄或只有一名家庭/成員</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

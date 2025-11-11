@@ -1,0 +1,8 @@
+@function rem($num) {
+  @return #{calc($num/16)}rem;
+}
+
+@function vw($num) {
+  $vw: calc($num / 1280 * 100);
+  @return #{$vw}vw;
+}

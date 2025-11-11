@@ -1,0 +1,99 @@
+@mixin media($type,$start,$end:0) {
+  @if $type == "max" {
+    @media screen and (max-width: #{$start}px) {
+      @content;
+    }
+  }
+  @if $type == "min" {
+    @media screen and (min-width: #{$start}px) {
+      @content;
+    }
+  }
+  @if $type == "interval" {
+    @media (min-width: #{$start}px) and (max-width: #{$end}px) {
+      @content;
+    }
+  }
+}
+@mixin mobile($type:max) {
+  @media screen and (#{$type}-width: 1024px) {
+    @content;
+  }
+}
+@mixin pad($type:max) {
+  @media screen and (#{$type}-width: 767px) {
+    @content;
+  }
+}
+@mixin phone($type:max) {
+  @media screen and (#{$type}-width: 640px) {
+    @content;
+  }
+}
+@mixin mini($type:max) {
+  @media screen and (#{$type}-width: 480px) {
+    @content;
+  }
+}
+@mixin t($t:0.5) {
+  transition-duration: #{$t}s;
+}
+@mixin size($w,$h:$w) {
+  width: $w;
+  height: $h;
+}
+
+
+// 指定icon
+@mixin fontawesome {
+  &:before {
+    font-family: 'FontAwesome';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: auto;
+    @content;
+  }
+}
+// 客製化delay
+@mixin delay($n:4,$cut:0.2) {
+  @for $i from 0 through 100 {
+    &.ks-animated:nth-of-type(#{$i+1}) {
+      transition-delay: #{$i%$n*$cut}s;
+    }
+  }
+}
+
+// 限制行數(...)
+@mixin lineClamp($n:2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $n;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+// Html Tag Img
+@mixin img($id:"",$cls:"") {
+  img#{$id+$cls},
+  svg#{$id+$cls}{
+    @content;
+  }
+}
+
+// app
+@mixin app($id:"",$cls:"") {
+  [id^="app-#{$id}"]#{$cls}{
+    @content;
+  }
+}
+// textblock
+@mixin textblock($id:"",$cls:"") {
+  #{$id}.widget_sow-editor #{$cls}{
+    @content;
+  }
+}
+// imgblock
+@mixin imgblock($id:"",$cls:"") {
+  #{$id}.widget_sow-image #{$cls}{
+    @content;
+  }
+}

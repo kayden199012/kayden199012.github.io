@@ -1,0 +1,122 @@
+// Container
+%container{
+  display: block;
+  margin: 0 auto!important;
+  padding: 0 15px!important;
+  max-width: 1500px;
+  width: 95%!important;
+  @include mobile{
+    width: 100%!important;
+  }
+  @include pad{
+    max-width: 640px;
+  }
+}
+
+// Flex
+%flexwrap{
+  display: flex;
+  flex-wrap: wrap;
+}
+
+%flexcenter{
+  align-items: center;
+  justify-content: center;
+}
+
+// Clearfix
+%clearfix{
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+// Cover
+%blockcover{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  @include size(100%);
+}
+
+// Default Button
+%button{
+  padding: 15px;
+  width: 200px;
+  flex-shrink: 0;
+  flex-grow: 0;
+  border-radius: 5px;
+  font-size: rem(18);
+  line-height: 1;
+  background-color: $btn_bg;
+  color: $btn_color;
+  font-weight: normal;
+  @include pad {
+    width: 150px;
+  }
+}
+
+// Product Price
+%price{
+  bdi{
+    color: $black;
+  }
+  del {
+    text-decoration-color: $gray;
+    bdi{
+      color: $gray;
+    }
+  }
+  ins {
+    bdi{
+      color: $red;
+    }
+  }
+}
+
+// Product Add To Cart Button
+%add-to-cart-btn{
+  position: relative;
+  background-color: $main;
+  color: $white;
+  @include t;
+  &:after{
+    display: none;
+  }
+  &:hover{
+    background-color: $hover;
+  }
+  &.loading,&.added{
+    opacity: 1;
+    &:before{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      @include size(100%);
+      top: 0;
+      left: 0;
+      font-size: rem(20);
+      color: $white;
+    }
+  }
+  &.loading{
+    color: $hover;
+    background-color: $hover;
+    @include t(0);
+    @include fontawesome{
+      content: "\f110";
+      animation: add-to-cart-loading 1s infinite linear;
+    }
+  }
+  &.added{
+    transition-delay: 1s;
+    @include fontawesome{
+      content: "\f00c";
+      animation: added-to-cart 1s both;
+    }
+  }
+}
