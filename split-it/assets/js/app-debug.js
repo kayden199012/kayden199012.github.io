@@ -673,71 +673,68 @@ var AccountSharing = /*#__PURE__*/function () {
         });
         $('.member-cost').html(member);
       }
-      if (this.purchase.length > 0) {
-        var total_0 = 0; // 家庭人數總額
-        var total_1 = 0; // 家庭總額
-        this.purchase.forEach(function (e) {
-          switch (e.sharing) {
-            case 0:
-            case "0":
-              total_0 += Number(e.price);
-              break;
-            case 1:
-            case "1":
-              total_1 += Number(e.price);
-              break;
+      var total_0 = 0; // 家庭人數總額
+      var total_1 = 0; // 家庭總額
+      this.purchase.forEach(function (e) {
+        switch (e.sharing) {
+          case 0:
+          case "0":
+            total_0 += Number(e.price);
+            break;
+          case 1:
+          case "1":
+            total_1 += Number(e.price);
+            break;
+        }
+        _this9.members.forEach(function (m_e, idx) {
+          if (m_e.idx == e.member) {
+            _this9.members[idx].cost += Number(e.price);
           }
-          _this9.members.forEach(function (m_e, idx) {
-            if (m_e.idx == e.member) {
-              _this9.members[idx].cost += Number(e.price);
-            }
-          });
         });
-        this.members.forEach(function (e, idx) {
-          $("#cost-" + e.idx).text(e.cost);
-          _this9.members[idx].pay += total_0 / member_qty_total * e.qty + total_1 / _this9.members.length - e.cost;
-        });
-        var n = 0;
-        var pay_history = [];
-        // while (n < this.members.length) {
-        for (var _n in this.members) {
-          if (this.members[_n].pay < 0) {
-            for (var i in this.members) {
-              if (this.members[i].idx != this.members[_n].idx && this.members[i].pay > 0 && this.members[_n].pay < 0) {
-                var amount = this.members[_n].pay + this.members[i].pay;
-                if (amount > 0) {
-                  // 結清
-                  pay_history.push({
-                    from: this.members[i].title,
-                    to: this.members[_n].title,
-                    price: Math.floor(Math.abs(this.members[_n].pay) / 10) * 10
-                  });
-                  this.members[_n].pay = 0;
-                  this.members[i].pay = amount;
-                } else {
-                  // 未結清
-                  pay_history.push({
-                    from: this.members[i].title,
-                    to: this.members[_n].title,
-                    price: Math.floor(Math.abs(this.members[i].pay) / 10) * 10
-                  });
-                  this.members[_n].pay = amount;
-                  this.members[i].pay = 0;
-                }
+      });
+      this.members.forEach(function (e, idx) {
+        $("#cost-" + e.idx).text(e.cost);
+        _this9.members[idx].pay += total_0 / member_qty_total * e.qty + total_1 / _this9.members.length - e.cost;
+      });
+      var n = 0;
+      var pay_history = [];
+      for (var _n in this.members) {
+        if (this.members[_n].pay < 0) {
+          for (var i in this.members) {
+            if (this.members[i].idx != this.members[_n].idx && this.members[i].pay > 0 && this.members[_n].pay < 0) {
+              var amount = this.members[_n].pay + this.members[i].pay;
+              if (amount > 0) {
+                // 結清
+                pay_history.push({
+                  from: this.members[i].title,
+                  to: this.members[_n].title,
+                  price: Math.floor(Math.abs(this.members[_n].pay) / 10) * 10
+                });
+                this.members[_n].pay = 0;
+                this.members[i].pay = amount;
+              } else {
+                // 未結清
+                pay_history.push({
+                  from: this.members[i].title,
+                  to: this.members[_n].title,
+                  price: Math.floor(Math.abs(this.members[i].pay) / 10) * 10
+                });
+                this.members[_n].pay = amount;
+                this.members[i].pay = 0;
               }
             }
           }
         }
-        if (pay_history.length > 0) {
-          var history_html = "";
-          pay_history.forEach(function (e) {
-            history_html += _this9.html.history.replace(/{{from}}/g, e.from).replace(/{{to}}/g, e.to).replace(/{{price}}/g, e.price);
-          });
-          $("#sharing-result .group").remove();
-          $("#sharing-result .empty").hide().before(history_html);
-        } else {
-          $("#sharing-result .empty").show().siblings('.group').remove();
-        }
+      }
+      if (pay_history.length > 0) {
+        var history_html = "";
+        pay_history.forEach(function (e) {
+          history_html += _this9.html.history.replace(/{{from}}/g, e.from).replace(/{{to}}/g, e.to).replace(/{{price}}/g, e.price);
+        });
+        $("#sharing-result .group").remove();
+        $("#sharing-result .empty").hide().before(history_html);
+      } else {
+        $("#sharing-result .empty").show().siblings('.group').remove();
       }
 
       // 儲存備份
