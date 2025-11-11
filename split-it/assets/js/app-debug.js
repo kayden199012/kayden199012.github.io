@@ -680,22 +680,22 @@ var AccountSharing = /*#__PURE__*/function () {
           switch (e.sharing) {
             case 0:
             case "0":
-              total_0 += parseInt(e.price);
+              total_0 += Number(e.price);
               break;
             case 1:
             case "1":
-              total_1 += parseInt(e.price);
+              total_1 += Number(e.price);
               break;
           }
           _this9.members.forEach(function (m_e, idx) {
             if (m_e.idx == e.member) {
-              _this9.members[idx].cost += parseInt(e.price);
+              _this9.members[idx].cost += Number(e.price);
             }
           });
         });
         this.members.forEach(function (e, idx) {
           $("#cost-" + e.idx).text(e.cost);
-          _this9.members[idx].pay += Math.round(total_0 / member_qty_total) * e.qty + Math.round(total_1 / _this9.members.length) - e.cost;
+          _this9.members[idx].pay += total_0 / member_qty_total * e.qty + total_1 / _this9.members.length - e.cost;
         });
         var n = 0;
         var pay_history = [];
@@ -710,7 +710,7 @@ var AccountSharing = /*#__PURE__*/function () {
                   pay_history.push({
                     from: this.members[i].title,
                     to: this.members[_n].title,
-                    price: Math.abs(this.members[_n].pay)
+                    price: Math.floor(Math.abs(this.members[_n].pay) / 10) * 10
                   });
                   this.members[_n].pay = 0;
                   this.members[i].pay = amount;
@@ -719,7 +719,7 @@ var AccountSharing = /*#__PURE__*/function () {
                   pay_history.push({
                     from: this.members[i].title,
                     to: this.members[_n].title,
-                    price: Math.abs(this.members[i].pay)
+                    price: Math.floor(Math.abs(this.members[i].pay) / 10) * 10
                   });
                   this.members[_n].pay = amount;
                   this.members[i].pay = 0;
