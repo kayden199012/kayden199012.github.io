@@ -741,7 +741,7 @@ var AccountSharing = /*#__PURE__*/function () {
       }
 
       // 儲存備份
-      sessionStorage.setItem("memory", JSON.stringify(this));
+      localStorage.setItem("memory", JSON.stringify(this));
     }
   }, {
     key: "updateTotal",
@@ -761,6 +761,6 @@ var AccountSharing = /*#__PURE__*/function () {
   return AccountSharing;
 }();
 $(function () {
-  var memory = sessionStorage.getItem("memory");
+  var memory = localStorage.getItem("memory");
   window.action = new AccountSharing(JSON.parse(memory));
 });
