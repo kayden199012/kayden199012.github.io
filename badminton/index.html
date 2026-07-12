@@ -78,28 +78,30 @@
     border: 2px solid var(--ink);
     border-radius: 4px;
     overflow: hidden;
-    display: grid;
-    grid-template-columns: 56px 1fr 44px 1fr;
-    align-items: stretch;
   }
 
   .game-num{
     background: var(--ink);
     color: var(--paper);
     display:flex;
-    flex-direction: column;
-    align-items:center;
+    align-items:baseline;
     justify-content:center;
+    gap: 8px;
     font-family: 'Archivo Black', sans-serif;
-    font-size: 1.5rem;
-    padding: 10px 0;
+    font-size: 1.2rem;
+    padding: 8px 0;
   }
   .game-num small{
     font-family: 'Noto Sans TC', sans-serif;
-    font-size: 0.58rem;
+    font-size: 0.65rem;
     font-weight: 400;
     color: #c9c3ad;
-    margin-top: 2px;
+  }
+
+  .match-row{
+    display: grid;
+    grid-template-columns: 1fr 44px 1fr;
+    align-items: stretch;
   }
 
   .team{
@@ -134,7 +136,6 @@
   }
 
   .score-row{
-    grid-column: 1 / -1;
     display:flex;
     align-items:center;
     border-top: 1.5px dashed #c9c3ad;
@@ -228,7 +229,7 @@
 
   @media (max-width: 600px){
     h1{ font-size: 1.8rem; }
-    .game{ grid-template-columns: 40px 1fr 34px 1fr; }
+    .match-row{ grid-template-columns: 1fr 34px 1fr; }
     .player{ font-size: 0.9rem; padding: 5px 8px; min-width: 60px; }
   }
 
@@ -314,21 +315,23 @@
       el.className = "game";
       el.innerHTML = `
         <div class="game-num">${String(i+1).padStart(2,"0")}<small>GAME</small></div>
-        <div class="team">
-          <span class="player">${g.left[0]}</span>
-          <span class="player">${g.left[1]}</span>
-        </div>
-        <div class="vs">VS</div>
-        <div class="team">
-          <span class="player">${g.right[0]}</span>
-          <span class="player">${g.right[1]}</span>
+        <div class="match-row">
+          <div class="team">
+            <span class="player">${g.left[0]}</span>
+            <span class="player">${g.left[1]}</span>
+          </div>
+          <div class="vs">VS</div>
+          <div class="team">
+            <span class="player">${g.right[0]}</span>
+            <span class="player">${g.right[1]}</span>
+          </div>
         </div>
         <div class="score-row">
           <div class="score-box">左隊 <input type="number" inputmode="numeric" data-game="${key}" data-side="left" value="${saved.left}"></div>
           <div class="score-box mid">:</div>
           <div class="score-box">右隊 <input type="number" inputmode="numeric" data-game="${key}" data-side="right" value="${saved.right}"></div>
         </div>
-        <div class="saved-flag" id="flag-${key}" style="grid-column:1/-1;">已儲存 ✓</div>
+        <div class="saved-flag" id="flag-${key}">已儲存 ✓</div>
       `;
       container.appendChild(el);
     });
