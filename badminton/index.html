@@ -377,13 +377,19 @@
     rows.sort((a,b) => b.score - a.score);
 
     const tbody = document.getElementById("standingsBody");
-    tbody.innerHTML = rows.map((r, i) => `
+    let displayRank = 0;
+    tbody.innerHTML = rows.map((r, i) => {
+      if(i === 0 || r.score !== rows[i-1].score){
+        displayRank = i + 1;
+      }
+      return `
       <tr>
-        <td>${i+1}</td>
+        <td>${displayRank}</td>
         <td class="name">${r.name}</td>
         <td class="${r.score > 0 ? "pos" : ""}">${r.score}</td>
       </tr>
-    `).join("");
+    `;
+    }).join("");
   }
 
   const resetBtn = document.getElementById("resetBtn");
