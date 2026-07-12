@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>羽球賽程表</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+  :root{
+    --court-green: #1f6b4d;
+    --court-line: #f4f1e8;
+    --ink: #14231c;
+    --paper: #f4f1e8;
+    --accent: #f2b134;
+    --net: #0f4534;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--paper);
+    font-family: 'Noto Sans TC', sans-serif;
+    color: var(--ink);
+    padding: 40px 20px 60px;
+  }
+
+  .wrap{ max-width: 880px; margin: 0 auto; }
+
+  header{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 4px solid var(--ink);
+    padding-bottom: 18px;
+    margin-bottom: 30px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  h1{
+    font-family: 'Archivo Black', 'Noto Sans TC', sans-serif;
+    font-size: 2.6rem;
+    margin: 0;
+    letter-spacing: 1px;
+    line-height: 1.1;
+  }
+  h1 span{ color: var(--court-green); }
+
+  .subtitle{
+    font-size: 0.95rem;
+    color: #555;
+    margin-top: 6px;
+  }
+
+  .badge{
+    background: var(--court-green);
+    color: var(--paper);
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    border-radius: 100px;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+  }
+
+  .games{
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .game{
+    position: relative;
+    background: white;
+    border: 2px solid var(--ink);
+    border-radius: 4px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 56px 1fr 44px 1fr;
+    align-items: stretch;
+  }
+
+  .game-num{
+    background: var(--ink);
+    color: var(--paper);
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    justify-content:center;
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 1.5rem;
+    padding: 10px 0;
+  }
+  .game-num small{
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 0.58rem;
+    font-weight: 400;
+    color: #c9c3ad;
+    margin-top: 2px;
+  }
+
+  .team{
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    justify-content:center;
+    gap: 8px;
+    padding: 16px 10px;
+  }
+
+  .player{
+    background: var(--court-line);
+    border: 1.5px solid var(--ink);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    text-align:center;
+    min-width: 72px;
+  }
+
+  .vs{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Archivo Black', sans-serif;
+    color: var(--accent);
+    background: var(--net);
+    font-size: 0.85rem;
+    writing-mode: horizontal-tb;
+  }
+
+  .score-row{
+    grid-column: 1 / -1;
+    display:flex;
+    align-items:center;
+    border-top: 1.5px dashed #c9c3ad;
+  }
+  .score-box{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding: 8px;
+    font-size: 0.85rem;
+    color:#777;
+  }
+  .score-box input{
+    width: 48px;
+    text-align:center;
+    font-size: 1.05rem;
+    font-weight:700;
+    border: 1.5px solid #c9c3ad;
+    border-radius: 4px;
+    padding: 4px;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .score-box.mid{ flex: 0 0 44px; }
+
+  .saved-flag{
+    text-align:center;
+    font-size: 0.7rem;
+    color: var(--court-green);
+    font-weight: 700;
+    height: 14px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .saved-flag.show{ opacity: 1; }
+
+  .standings{
+    margin-top: 40px;
+  }
+  .standings h2{
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+  }
+  table{
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 2px solid var(--ink);
+  }
+  th, td{
+    padding: 10px 12px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.95rem;
+  }
+  th{
+    background: var(--ink);
+    color: var(--paper);
+    font-weight: 700;
+  }
+  tr:last-child td{ border-bottom: none; }
+  td.name{ text-align:left; font-weight:700; }
+  td.pos{ color: var(--court-green); font-weight:700; }
+  td.neg{ color: #b3402a; font-weight:700; }
+
+  footer{
+    margin-top: 40px;
+    border-top: 3px solid var(--ink);
+    padding-top: 20px;
+    display:flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color:#555;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .note{
+    background: var(--court-green);
+    color: var(--paper);
+    border-radius: 4px;
+    padding: 14px 18px;
+    font-size: 0.85rem;
+    margin-top: 30px;
+    line-height: 1.6;
+  }
+  .note b{ color: var(--accent); }
+
+  @media (max-width: 600px){
+    h1{ font-size: 1.8rem; }
+    .game{ grid-template-columns: 40px 1fr 34px 1fr; }
+    .player{ font-size: 0.9rem; padding: 5px 8px; min-width: 60px; }
+  }
+
+  @media print{
+    body{ padding: 0; background: white; }
+    .game{ break-inside: avoid; }
+    .badge{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>羽球<span>賽程表</span></h1>
+      <div class="subtitle">雙打友誼賽・共 5 場・每人上場 2 場</div>
+    </div>
+    <button class="badge" id="resetBtn">重設所有分數</button>
+  </header>
+
+  <div class="games" id="games"></div>
+
+  <div class="note">
+    <b>積分計算方式：</b>每場比賽結束後填入雙方分數。獲勝的一方依贏的分差獲得積分，輸的一方不倒扣，最少維持 0 分。兩場積分加總最高者為 MVP。分數會自動儲存在此瀏覽器中，重新整理頁面也不會消失。
+  </div>
+
+  <div class="standings">
+    <h2>即時積分榜</h2>
+    <table>
+      <thead>
+        <tr><th>排名</th><th style="text-align:left">球員</th><th>淨勝分</th></tr>
+      </thead>
+      <tbody id="standingsBody"></tbody>
+    </table>
+  </div>
+
+  <footer>
+    <span>10 位球員・5 場比賽</span>
+    <span>每人恰好上場 2 場</span>
+  </footer>
+
+</div>
+
+<script>
+  const GAMES = [
+    { left: ["哲瑋","爸爸"], right: ["KK","Aby"] },
+    { left: ["哲瑋","寧倢"], right: ["KK","茄魚"] },
+    { left: ["Amber","茄魚"], right: ["亮宇","寧倢"] },
+    { left: ["心育","Aby"], right: ["炸哥","爸爸"] },
+    { left: ["Amber","亮宇"], right: ["心育","炸哥"] },
+  ];
+
+  const STORAGE_KEY = "badminton_scores_v1";
+
+  function loadScores(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){
+      return {};
+    }
+  }
+
+  function saveScores(scores){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+    }catch(e){
+      console.error("無法儲存分數", e);
+    }
+  }
+
+  let scores = loadScores();
+
+  function renderGames(){
+    const container = document.getElementById("games");
+    container.innerHTML = "";
+    GAMES.forEach((g, i) => {
+      const key = "g" + i;
+      const saved = scores[key] || { left: "", right: "" };
+
+      const el = document.createElement("div");
+      el.className = "game";
+      el.innerHTML = `
+        <div class="game-num">${String(i+1).padStart(2,"0")}<small>GAME</small></div>
+        <div class="team">
+          <span class="player">${g.left[0]}</span>
+          <span class="player">${g.left[1]}</span>
+        </div>
+        <div class="vs">VS</div>
+        <div class="team">
+          <span class="player">${g.right[0]}</span>
+          <span class="player">${g.right[1]}</span>
+        </div>
+        <div class="score-row">
+          <div class="score-box">左隊 <input type="number" inputmode="numeric" data-game="${key}" data-side="left" value="${saved.left}"></div>
+          <div class="score-box mid">:</div>
+          <div class="score-box">右隊 <input type="number" inputmode="numeric" data-game="${key}" data-side="right" value="${saved.right}"></div>
+        </div>
+        <div class="saved-flag" id="flag-${key}" style="grid-column:1/-1;">已儲存 ✓</div>
+      `;
+      container.appendChild(el);
+    });
+
+    container.querySelectorAll("input").forEach(input => {
+      input.addEventListener("input", onScoreChange);
+    });
+  }
+
+  let flagTimeout;
+  function onScoreChange(e){
+    const key = e.target.dataset.game;
+    const side = e.target.dataset.side;
+    if(!scores[key]) scores[key] = { left: "", right: "" };
+    scores[key][side] = e.target.value;
+    saveScores(scores);
+    renderStandings();
+
+    const flag = document.getElementById("flag-" + key);
+    flag.classList.add("show");
+    clearTimeout(flagTimeout);
+    flagTimeout = setTimeout(() => flag.classList.remove("show"), 1200);
+  }
+
+  function renderStandings(){
+    const net = {};
+    GAMES.forEach((g, i) => {
+      const key = "g" + i;
+      const s = scores[key];
+      if(!s || s.left === "" || s.right === "" || s.left === undefined || s.right === undefined) return;
+      const l = parseInt(s.left, 10);
+      const r = parseInt(s.right, 10);
+      if(isNaN(l) || isNaN(r)) return;
+      const diff = l - r;
+      const leftGain = Math.max(diff, 0);
+      const rightGain = Math.max(-diff, 0);
+      g.left.forEach(p => { net[p] = (net[p] || 0) + leftGain; });
+      g.right.forEach(p => { net[p] = (net[p] || 0) + rightGain; });
+    });
+
+    const allPlayers = new Set();
+    GAMES.forEach(g => { g.left.forEach(p=>allPlayers.add(p)); g.right.forEach(p=>allPlayers.add(p)); });
+
+    const rows = Array.from(allPlayers).map(p => ({ name: p, score: net[p] || 0 }));
+    rows.sort((a,b) => b.score - a.score);
+
+    const tbody = document.getElementById("standingsBody");
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td class="name">${r.name}</td>
+        <td class="${r.score > 0 ? "pos" : ""}">${r.score}</td>
+      </tr>
+    `).join("");
+  }
+
+  const resetBtn = document.getElementById("resetBtn");
+  let confirmingReset = false;
+  let resetConfirmTimeout;
+
+  resetBtn.addEventListener("click", () => {
+    if(!confirmingReset){
+      confirmingReset = true;
+      resetBtn.textContent = "確定要清除嗎？再按一次";
+      resetConfirmTimeout = setTimeout(() => {
+        confirmingReset = false;
+        resetBtn.textContent = "重設所有分數";
+      }, 3000);
+      return;
+    }
+
+    clearTimeout(resetConfirmTimeout);
+    confirmingReset = false;
+    resetBtn.textContent = "重設所有分數";
+
+    scores = {};
+    saveScores(scores);
+    renderGames();
+    renderStandings();
+  });
+
+  renderGames();
+  renderStandings();
+</script>
+
+</body>
+</html>
