@@ -252,7 +252,7 @@
   <div class="games" id="games"></div>
 
   <div class="note">
-    <b>積分計算方式：</b>每場比賽結束後填入雙方分數。獲勝的一方依贏的分差獲得積分，輸的一方不倒扣，最少維持 0 分。兩場積分加總最高者為 MVP。分數會自動儲存在此瀏覽器中，重新整理頁面也不會消失。
+    <b>積分計算方式：</b>每場比賽結束後填入雙方分數，個人積分 = 該球員參與的兩場「淨勝分（得分－失分）」加總，若加總為負則以 0 分計。分數會自動儲存在此瀏覽器中，重新整理頁面也不會消失。
   </div>
 
   <div class="standings">
@@ -362,16 +362,14 @@
       const r = parseInt(s.right, 10);
       if(isNaN(l) || isNaN(r)) return;
       const diff = l - r;
-      const leftGain = Math.max(diff, 0);
-      const rightGain = Math.max(-diff, 0);
-      g.left.forEach(p => { net[p] = (net[p] || 0) + leftGain; });
-      g.right.forEach(p => { net[p] = (net[p] || 0) + rightGain; });
+      g.left.forEach(p => { net[p] = (net[p] || 0) + diff; });
+      g.right.forEach(p => { net[p] = (net[p] || 0) - diff; });
     });
 
     const allPlayers = new Set();
     GAMES.forEach(g => { g.left.forEach(p=>allPlayers.add(p)); g.right.forEach(p=>allPlayers.add(p)); });
 
-    const rows = Array.from(allPlayers).map(p => ({ name: p, score: net[p] || 0 }));
+    const rows = Array.from(allPlayers).map(p => ({ name: p, score: Math.max(net[p] || 0, 0) }));
     rows.sort((a,b) => b.score - a.score);
 
     const tbody = document.getElementById("standingsBody");
