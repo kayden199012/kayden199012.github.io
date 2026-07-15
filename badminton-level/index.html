@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>羽球程度快速測驗</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --court:#0f2a4a;
+    --court-deep:#081a2f;
+    --panel:rgba(255,255,255,0.06);
+    --panel-border:rgba(255,255,255,0.14);
+    --line:#f5f3ec;
+    --line-dim:rgba(245,243,236,0.62);
+    --shuttle:#ff7a3d;
+    --shuttle-2:#ffb25e;
+
+    --lv-green:#8fc96b;
+    --lv-pink:#f3a9be;
+    --lv-magenta:#ea5fa0;
+    --lv-yellow:#f6e27a;
+    --lv-amber:#f5b93e;
+    --lv-blue:#4fb4e0;
+    --lv-grey:#e7e5dd;
+    --lv-black:#111111;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse at top, rgba(255,255,255,0.05), transparent 60%),
+      linear-gradient(180deg, var(--court) 0%, var(--court-deep) 100%);
+    color:var(--line);
+    font-family:'Noto Sans TC', sans-serif;
+    display:flex;
+    justify-content:center;
+    padding:32px 16px 60px;
+    position:relative;
+    overflow-x:hidden;
+  }
+
+  /* faint court lines behind everything */
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 100% 33.3%, 33.3% 100%;
+    background-position: center;
+    pointer-events:none;
+    z-index:0;
+  }
+  body::after{
+    content:"";
+    position:fixed;
+    left:50%; top:50%;
+    width:1px; height:520px;
+    background:rgba(255,255,255,0.06);
+    transform:translate(-50%,-50%) rotate(90deg);
+    pointer-events:none;
+  }
+
+  .stage{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width:520px;
+  }
+
+  .eyebrow{
+    font-family:'Barlow Condensed', sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.22em;
+    font-size:13px;
+    color:var(--shuttle-2);
+    font-weight:700;
+  }
+
+  h1{
+    font-family:'Noto Sans TC', sans-serif;
+    font-weight:900;
+    font-size:clamp(28px,7vw,38px);
+    line-height:1.25;
+    margin:10px 0 8px;
+  }
+
+  .lead{
+    color:var(--line-dim);
+    font-size:15px;
+    line-height:1.7;
+    margin:0 0 28px;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:18px;
+    padding:26px 22px;
+    backdrop-filter:blur(6px);
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);
+  }
+
+  /* ---------- intro ---------- */
+  .badge-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin:18px 0 22px;
+  }
+  .chip{
+    font-size:12px;
+    font-weight:700;
+    padding:5px 12px;
+    border-radius:999px;
+    border:1px solid var(--panel-border);
+    color:var(--line-dim);
+    letter-spacing:0.02em;
+  }
+
+  button.primary{
+    appearance:none;
+    border:none;
+    cursor:pointer;
+    width:100%;
+    padding:16px 20px;
+    border-radius:12px;
+    background:linear-gradient(135deg, var(--shuttle), var(--shuttle-2));
+    color:#241000;
+    font-family:'Noto Sans TC', sans-serif;
+    font-weight:900;
+    font-size:16px;
+    letter-spacing:0.02em;
+    transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:0 10px 24px rgba(255,122,61,0.25);
+  }
+  button.primary:hover{transform:translateY(-1px);}
+  button.primary:active{transform:translateY(0);}
+  button.primary:focus-visible{outline:3px solid var(--line); outline-offset:2px;}
+  button.primary:disabled{
+    opacity:0.35;
+    cursor:not-allowed;
+    box-shadow:none;
+  }
+
+  button.ghost{
+    appearance:none;
+    background:transparent;
+    border:1px solid var(--panel-border);
+    color:var(--line-dim);
+    border-radius:12px;
+    padding:14px 18px;
+    font-family:'Noto Sans TC', sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+  }
+  button.ghost:focus-visible{outline:3px solid var(--line); outline-offset:2px;}
+
+  .btn-row{display:flex; gap:10px; margin-top:20px;}
+  .btn-row .ghost{flex:0 0 auto;}
+  .btn-row .primary{flex:1;}
+
+  /* ---------- quiz ---------- */
+  .progress-track{
+    display:flex;
+    gap:6px;
+    margin-bottom:18px;
+  }
+  .progress-track i{
+    flex:1;
+    height:4px;
+    border-radius:4px;
+    background:rgba(255,255,255,0.14);
+    display:block;
+    overflow:hidden;
+  }
+  .progress-track i em{
+    display:block;
+    height:100%;
+    width:0%;
+    background:var(--shuttle);
+    border-radius:4px;
+    transition:width .3s ease;
+  }
+
+  .serve-label{
+    font-family:'Barlow Condensed', sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.18em;
+    font-size:12.5px;
+    color:var(--line-dim);
+    font-weight:700;
+    margin-bottom:10px;
+  }
+
+  .question{
+    font-weight:900;
+    font-size:19px;
+    line-height:1.55;
+    margin-bottom:18px;
+  }
+
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .option{
+    border:1px solid var(--panel-border);
+    background:rgba(255,255,255,0.03);
+    border-radius:12px;
+    padding:14px 16px;
+    font-size:14.5px;
+    line-height:1.5;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+  }
+  .option:hover{border-color:rgba(255,255,255,0.35);}
+  .option.selected{
+    border-color:var(--shuttle);
+    background:rgba(255,122,61,0.14);
+  }
+  .option .dot{
+    flex:0 0 auto;
+    width:18px;height:18px;
+    border-radius:50%;
+    border:2px solid var(--line-dim);
+    margin-top:2px;
+    position:relative;
+  }
+  .option.selected .dot{border-color:var(--shuttle);}
+  .option.selected .dot::after{
+    content:"";
+    position:absolute; inset:3px;
+    border-radius:50%;
+    background:var(--shuttle);
+  }
+  .option:focus-visible{outline:3px solid var(--line); outline-offset:2px;}
+
+  /* ---------- result ---------- */
+  .result-top{
+    text-align:center;
+    margin-bottom:6px;
+  }
+  .lv-tag{
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:700;
+    letter-spacing:0.2em;
+    font-size:13px;
+    color:var(--line-dim);
+    text-transform:uppercase;
+  }
+  .lv-number{
+    font-family:'Barlow Condensed', sans-serif;
+    font-weight:800;
+    font-size:96px;
+    line-height:1;
+    margin:2px 0;
+  }
+  .lv-band{
+    display:inline-block;
+    padding:8px 20px;
+    border-radius:999px;
+    font-weight:900;
+    font-size:17px;
+    margin-bottom:14px;
+  }
+  .lv-desc{
+    color:var(--line-dim);
+    font-size:14.5px;
+    line-height:1.75;
+    margin-bottom:20px;
+  }
+  .lv-insight{
+    display:flex;
+    gap:10px;
+    margin-bottom:22px;
+  }
+  .insight-box{
+    flex:1;
+    border:1px solid var(--panel-border);
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:13px;
+    line-height:1.6;
+  }
+  .insight-box .k{
+    font-family:'Barlow Condensed', sans-serif;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    font-size:11px;
+    color:var(--line-dim);
+    font-weight:700;
+    display:block;
+    margin-bottom:4px;
+  }
+
+  .ladder{
+    display:flex;
+    flex-direction:column-reverse;
+    gap:3px;
+    margin:22px 0 8px;
+  }
+  .ladder-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    height:15px;
+  }
+  .ladder-row .lv-idx{
+    width:22px;
+    font-family:'Barlow Condensed', sans-serif;
+    font-size:11px;
+    font-weight:700;
+    text-align:right;
+    color:var(--line-dim);
+    flex:0 0 auto;
+  }
+  .ladder-row .bar{
+    flex:1;
+    height:100%;
+    border-radius:4px;
+    opacity:0.35;
+    position:relative;
+  }
+  .ladder-row.current .bar{
+    opacity:1;
+    box-shadow:0 0 0 2px var(--line);
+  }
+  .ladder-row.current .lv-idx{color:var(--line); font-weight:900;}
+  .marker{
+    position:absolute;
+    left:-8px; top:50%;
+    transform:translateY(-50%);
+    font-size:12px;
+  }
+
+  .ladder-caption{
+    font-size:11.5px;
+    color:var(--line-dim);
+    text-align:right;
+    margin-bottom:20px;
+  }
+
+  footer{
+    margin-top:22px;
+    text-align:center;
+    font-size:12px;
+    color:var(--line-dim);
+    line-height:1.7;
+  }
+
+  .hidden{display:none !important;}
+
+  @media (prefers-reduced-motion: reduce){
+    button.primary, .progress-track i em{transition:none;}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- ===================== INTRO ===================== -->
+  <section id="screen-intro">
+    <div class="eyebrow">Badminton · Level Check</div>
+    <h1>羽球程度快速測驗</h1>
+    <p class="lead">
+      不用背術語、不用猜等級。回答 9 題你打球時的實際狀況，
+      我們會依照新的計分邏輯，換算成台灣羽球推廣協會的 1–18 級分級，
+      讓約團、排隊、分組更有依據。
+    </p>
+    <div class="card">
+      <div class="badge-row">
+        <span class="chip">9 個情境題</span>
+        <span class="chip">約需 2 分鐘</span>
+        <span class="chip">結果對應 1–18 級</span>
+      </div>
+      <button class="primary" id="btn-start">開始測驗</button>
+    </div>
+  </section>
+
+  <!-- ===================== QUIZ ===================== -->
+  <section id="screen-quiz" class="hidden">
+    <div class="progress-track" id="progress-track"></div>
+    <div class="card">
+      <div class="serve-label" id="serve-label">第 1 球 / 共 9 球</div>
+      <div class="question" id="question-text"></div>
+      <div class="options" id="options-wrap"></div>
+      <div class="btn-row">
+        <button class="ghost" id="btn-back">上一題</button>
+        <button class="primary" id="btn-next" disabled>下一題</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== RESULT ===================== -->
+  <section id="screen-result" class="hidden">
+    <div class="card">
+      <div class="result-top">
+        <div class="lv-tag">你的估計等級</div>
+        <div class="lv-number" id="lv-number">--</div>
+        <div class="lv-band" id="lv-band">--</div>
+        <p class="lv-desc" id="lv-desc"></p>
+      </div>
+
+      <div class="lv-insight">
+        <div class="insight-box">
+          <span class="k">相對強項</span>
+          <span id="insight-strong">—</span>
+        </div>
+        <div class="insight-box">
+          <span class="k">可加強</span>
+          <span id="insight-weak">—</span>
+        </div>
+      </div>
+
+      <div class="ladder" id="ladder"></div>
+      <div class="ladder-caption">1 新手 → 18 職業級</div>
+
+      <div class="btn-row">
+        <button class="ghost" id="btn-restart">重新測驗</button>
+      </div>
+    </div>
+    <footer>
+      分級邏輯參考台灣羽球推廣協會 18 級分級架構，並依實際打法重新設計題目與計分方式，結果僅供約團排隊 / 分組參考。
+    </footer>
+  </section>
+
+</div>
+
+<script>
+(function(){
+
+  // ---- question bank ----
+  // each option: { text, v } where v is 0-4 skill value
+  const QUESTIONS = [
+    {
+      q: "你打羽球大概多久了？",
+      w: 1,
+      opts: [
+        {t:"剛開始，不到一年", v:0},
+        {t:"1～3 年", v:1},
+        {t:"3～5 年", v:2},
+        {t:"5～10 年", v:3},
+        {t:"10 年以上", v:4},
+      ]
+    },
+    {
+      q: "發球 10 次，大概能成功幾次（過網、不出界、落點也還算穩）？",
+      w: 1,
+      opts: [
+        {t:"常常失誤，成功不到一半", v:0},
+        {t:"大概一半以上會成功", v:2},
+        {t:"幾乎都成功，甚至能控制落點", v:4},
+      ]
+    },
+    {
+      q: "對打高遠球（清球）時，球最遠大概可以打到哪裡？",
+      w: 1.5,
+      opts: [
+        {t:"常常打不到中場", v:0},
+        {t:"可以打到中場～2/3 場左右", v:1},
+        {t:"不太用力也能打到後場附近", v:3},
+        {t:"隨時都能穩定拉到後場任一角落", v:4},
+      ]
+    },
+    {
+      q: "殺球、切球你會打嗎？成功率大概多少？",
+      w: 2,
+      opts: [
+        {t:"完全不會，只會平抽或高遠球", v:0},
+        {t:"會打，但常常下網或出界，不穩", v:1},
+        {t:"沒人逼我的時候，成功率還不錯", v:2},
+        {t:"不管有沒有壓力，成功率大概 7 成以上", v:3},
+        {t:"又快又準，九成以上到位、有威力", v:4},
+      ]
+    },
+    {
+      q: "場上走位、輪轉的時候，你的感覺比較像？",
+      w: 1.5,
+      opts: [
+        {t:"完全沒概念，常卡在原地或跑錯位置", v:0},
+        {t:"略懂基本輪轉，但常來不及跟上", v:1},
+        {t:"輪轉概念清楚，大部分時候都跟得上節奏", v:3},
+        {t:"移位又快又準，能靈活切換攻守位置", v:4},
+      ]
+    },
+    {
+      q: "對方打過來刁鑽的球，你的防守表現大概是？",
+      w: 1.5,
+      opts: [
+        {t:"常常整個接不到", v:0},
+        {t:"接得到，但只能防守、沒有變化", v:1},
+        {t:"防守時能做一些落點變化", v:2},
+        {t:"防守穩定，還能製造威脅、反擊", v:3},
+        {t:"防守幾乎沒有死角", v:4},
+      ]
+    },
+    {
+      q: "打球時你會不會想「打點」和「戰術」，還是球過去就好？",
+      w: 1.5,
+      opts: [
+        {t:"沒有想那麼多，把球打過去就好", v:0},
+        {t:"有基本打點概念，會挑對方弱點打", v:2},
+        {t:"會依情況安排戰術，主動製造得分機會", v:3},
+        {t:"整體戰略組織、爆發力都在水準之上", v:4},
+      ]
+    },
+    {
+      q: "正反手轉換（尤其是反拍）對你來說順不順？",
+      w: 1,
+      opts: [
+        {t:"反拍常常卡住，打不好", v:0},
+        {t:"反拍還可以，但不算熟練", v:2},
+        {t:"正反拍轉換很順，各種球路都難不倒我", v:4},
+      ]
+    },
+    {
+      q: "你目前主要的參賽 / 訓練背景是？",
+      w: 2,
+      opts: [
+        {t:"沒參加過正式比賽，自己練或朋友打", v:0},
+        {t:"有固定參加一般休閒零打團", v:1},
+        {t:"校隊替補，或有固定團隊訓練", v:2},
+        {t:"校隊主力、體保生，或社會甲組選手", v:3},
+        {t:"國家代表隊等級", v:4},
+      ]
+    },
+  ];
+
+  const BANDS = [
+    {max:3,  name:"新手階",   color:"var(--lv-green)",  dark:true,
+      desc:"你正在建立基本手感和規則觀念，多練發球和高遠球，進步會很快。"},
+    {max:5,  name:"初階",     color:"var(--lv-pink)",   dark:true,
+      desc:"基本動作已經上手，接下來可以加強腳步移動和正反拍轉換的順暢度。"},
+    {max:6,  name:"初中階",   color:"var(--lv-magenta)",dark:false,
+      desc:"殺切球開始有雛形，穩定度和輪轉的熟練度是接下來的重點。"},
+    {max:7,  name:"初中階",   color:"var(--lv-yellow)", dark:true,
+      desc:"攻擊球路的成功率已經不錯，可以開始加入更多防守變化。"},
+    {max:9,  name:"中階",     color:"var(--lv-amber)",  dark:true,
+      desc:"戰術意識和攻防轉換都漸趨成熟，可以挑戰強度更高的對手。"},
+    {max:12, name:"中進階",   color:"var(--lv-blue)",   dark:false,
+      desc:"輪轉和步法相當純熟，正式比賽中也能穩定發揮實力。"},
+    {max:15, name:"高階",     color:"var(--lv-grey)",   dark:true,
+      desc:"各項球路的穩定度都在水準之上，已具備校隊 / 甲組等級的實力。"},
+    {max:18, name:"職業級",   color:"var(--lv-black)",  dark:false,
+      desc:"球路和步法已經爐火純青，是場上數一數二的強者。"},
+  ];
+
+  function getBand(level){
+    return BANDS.find(b => level <= b.max);
+  }
+
+  // ---- state ----
+  let current = 0;
+  const answers = new Array(QUESTIONS.length).fill(null);
+
+  const screenIntro  = document.getElementById('screen-intro');
+  const screenQuiz   = document.getElementById('screen-quiz');
+  const screenResult = document.getElementById('screen-result');
+
+  document.getElementById('btn-start').addEventListener('click', () => {
+    screenIntro.classList.add('hidden');
+    screenQuiz.classList.remove('hidden');
+    buildProgress();
+    renderQuestion();
+  });
+
+  function buildProgress(){
+    const track = document.getElementById('progress-track');
+    track.innerHTML = '';
+    QUESTIONS.forEach(() => {
+      const i = document.createElement('i');
+      i.innerHTML = '<em></em>';
+      track.appendChild(i);
+    });
+  }
+
+  function updateProgress(){
+    const track = document.getElementById('progress-track');
+    [...track.children].forEach((i, idx) => {
+      const em = i.querySelector('em');
+      em.style.width = (idx < current || (idx === current && answers[current] !== null)) ? '100%'
+                        : (idx === current ? '35%' : '0%');
+    });
+  }
+
+  function renderQuestion(){
+    const item = QUESTIONS[current];
+    document.getElementById('serve-label').textContent =
+      `第 ${current+1} 球 / 共 ${QUESTIONS.length} 球`;
+    document.getElementById('question-text').textContent = item.q;
+
+    const wrap = document.getElementById('options-wrap');
+    wrap.innerHTML = '';
+    item.opts.forEach((opt, idx) => {
+      const div = document.createElement('div');
+      div.className = 'option' + (answers[current] === idx ? ' selected' : '');
+      div.tabIndex = 0;
+      div.setAttribute('role','radio');
+      div.setAttribute('aria-checked', answers[current] === idx ? 'true' : 'false');
+      div.innerHTML = `<span class="dot"></span><span>${opt.t}</span>`;
+      div.addEventListener('click', () => selectOption(idx));
+      div.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); selectOption(idx); }
+      });
+      wrap.appendChild(div);
+    });
+
+    document.getElementById('btn-back').style.visibility = current === 0 ? 'hidden' : 'visible';
+    document.getElementById('btn-next').disabled = answers[current] === null;
+    document.getElementById('btn-next').textContent =
+      current === QUESTIONS.length - 1 ? '看結果' : '下一題';
+    updateProgress();
+  }
+
+  function selectOption(idx){
+    answers[current] = idx;
+    renderQuestion();
+  }
+
+  document.getElementById('btn-back').addEventListener('click', () => {
+    if(current > 0){ current--; renderQuestion(); }
+  });
+
+  document.getElementById('btn-next').addEventListener('click', () => {
+    if(answers[current] === null) return;
+    if(current < QUESTIONS.length - 1){
+      current++;
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  });
+
+  function showResult(){
+    let weightedSum = 0, maxWeighted = 0;
+    let strongIdx = 0, weakIdx = 0, strongRatio = -1, weakRatio = 2;
+
+    QUESTIONS.forEach((item, i) => {
+      const chosen = item.opts[answers[i]];
+      const ratio = chosen.v / 4;
+      weightedSum += chosen.v * item.w;
+      maxWeighted += 4 * item.w;
+      if(ratio > strongRatio){ strongRatio = ratio; strongIdx = i; }
+      if(ratio < weakRatio){ weakRatio = ratio; weakIdx = i; }
+    });
+
+    const finalRatio = weightedSum / maxWeighted;
+    let level = Math.round(1 + finalRatio * 17);
+    level = Math.max(1, Math.min(18, level));
+    const band = getBand(level);
+
+    screenQuiz.classList.add('hidden');
+    screenResult.classList.remove('hidden');
+
+    document.getElementById('lv-number').textContent = 'LV. ' + level;
+    document.getElementById('lv-number').style.color = band.color;
+
+    const bandEl = document.getElementById('lv-band');
+    bandEl.textContent = band.name;
+    bandEl.style.background = band.color;
+    bandEl.style.color = band.dark ? '#1a1a1a' : '#f5f3ec';
+
+    document.getElementById('lv-desc').textContent = band.desc;
+
+    document.getElementById('insight-strong').textContent = QUESTIONS[strongIdx].q.replace(/？$/,'');
+    document.getElementById('insight-weak').textContent = QUESTIONS[weakIdx].q.replace(/？$/,'');
+
+    buildLadder(level);
+  }
+
+  function bandColorForLevel(lv){
+    return getBand(lv).color;
+  }
+
+  function buildLadder(level){
+    const ladder = document.getElementById('ladder');
+    ladder.innerHTML = '';
+    for(let lv = 1; lv <= 18; lv++){
+      const row = document.createElement('div');
+      row.className = 'ladder-row' + (lv === level ? ' current' : '');
+      const idx = document.createElement('div');
+      idx.className = 'lv-idx';
+      idx.textContent = lv;
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+      bar.style.background = bandColorForLevel(lv);
+      if(lv === level){
+        bar.innerHTML = '<span class="marker">◀</span>';
+      }
+      row.appendChild(idx);
+      row.appendChild(bar);
+      ladder.appendChild(row);
+    }
+  }
+
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    current = 0;
+    answers.fill(null);
+    screenResult.classList.add('hidden');
+    screenIntro.classList.remove('hidden');
+  });
+
+})();
+</script>
+</body>
+</html>
