@@ -318,14 +318,37 @@
 
 <script>
 const PALETTE = ['#E1614B', '#3E8E8A', '#E8B84B', '#7C9A6E', '#8B6FB3', '#D4886F', '#5A9BC4', '#C77DA6'];
+const STORAGE_KEY = 'spin-wheel-options-v1';
 
-let options = [
+const DEFAULT_OPTIONS = [
   { name: '大獎', weight: 5, color: PALETTE[0] },
   { name: '謝謝參加', weight: 40, color: PALETTE[1] },
   { name: '小禮物', weight: 20, color: PALETTE[2] },
   { name: '再抽一次', weight: 15, color: PALETTE[3] },
   { name: '折價券', weight: 20, color: PALETTE[4] },
 ];
+
+function loadOptions() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    return JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
+  } catch (e) {
+    return JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
+  }
+}
+
+function saveOptions() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(options));
+  } catch (e) {
+    // localStorage unavailable (e.g. private browsing) — fail silently
+  }
+}
+
+let options = loadOptions();
 
 let currentRotationDeg = 0;
 let spinning = false;
@@ -404,6 +427,7 @@ rowsEl.addEventListener('input', (e) => {
   });
   checkValidity();
   drawWheel();
+  saveOptions();
 });
 
 rowsEl.addEventListener('click', (e) => {
@@ -411,22 +435,18 @@ rowsEl.addEventListener('click', (e) => {
     const i = Number(e.target.dataset.i);
     options.splice(i, 1);
     renderRows();
+    saveOptions();
   }
 });
 
 document.getElementById('addBtn').addEventListener('click', () => {
   options.push({ name: '新選項', weight: 10, color: nextColor() });
   renderRows();
+  saveOptions();
 });
 
 document.getElementById('resetBtn').addEventListener('click', () => {
-  options = [
-    { name: '大獎', weight: 5, color: PALETTE[0] },
-    { name: '謝謝參加', weight: 40, color: PALETTE[1] },
-    { name: '小禮物', weight: 20, color: PALETTE[2] },
-    { name: '再抽一次', weight: 15, color: PALETTE[3] },
-    { name: '折價券', weight: 20, color: PALETTE[4] },
-  ];
+  options = JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
   currentRotationDeg = 0;
   canvas.style.transition = 'none';
   canvas.style.transform = `rotate(0deg)`;
@@ -434,6 +454,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   resultLabel.textContent = '\u00a0';
   requestAnimationFrame(() => { canvas.style.transition = ''; });
   renderRows();
+  saveOptions();
 });
 
 function drawWheel() {
