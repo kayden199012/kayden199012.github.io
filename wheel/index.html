@@ -244,11 +244,12 @@
 
   .panel-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-top: 16px;
   }
   .btn-ghost {
-    flex: 1;
+    flex: 1 1 120px;
     font-family: 'Inter', sans-serif;
     font-weight: 500;
     font-size: 13.5px;
@@ -276,6 +277,11 @@
     margin-top: 10px;
     font-size: 12.5px;
     color: var(--coral);
+    min-height: 16px;
+  }
+  .share-msg {
+    font-size: 12.5px;
+    color: var(--teal);
     min-height: 16px;
   }
 </style>
@@ -309,9 +315,11 @@
       <div class="panel-actions">
         <button class="btn-ghost" id="addBtn">＋ 新增選項</button>
         <button class="btn-ghost" id="resetBtn">重設預設值</button>
+        <button class="btn-ghost" id="shareBtn">🔗 分享連結</button>
       </div>
       <div class="total-line"><span>權重總和</span><span id="totalWeight">0</span></div>
       <div class="warn" id="warnMsg">&nbsp;</div>
+      <div class="share-msg" id="shareMsg">&nbsp;</div>
     </div>
   </div>
 </div>
@@ -328,13 +336,38 @@ const DEFAULT_OPTIONS = [
   { name: '折價券', weight: 20, color: PALETTE[4] },
 ];
 
+function sanitizeOptions(parsed) {
+  if (!Array.isArray(parsed) || parsed.length === 0) return null;
+  const cleaned = parsed
+    .filter(o => o && typeof o === 'object')
+    .map((o, idx) => ({
+      name: String(o.name ?? '選項').slice(0, 24),
+      weight: Number(o.weight) || 0,
+      color: /^#[0-9a-fA-F]{6}$/.test(o.color) ? o.color : PALETTE[idx % PALETTE.length],
+    }));
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+function loadFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('data')) return null;
+    const parsed = JSON.parse(params.get('data'));
+    return sanitizeOptions(parsed);
+  } catch (e) {
+    return null;
+  }
+}
+
 function loadOptions() {
+  const fromUrl = loadFromUrl();
+  if (fromUrl) return fromUrl;
+
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    return JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
+    const parsed = sanitizeOptions(JSON.parse(raw));
+    return parsed || JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
   } catch (e) {
     return JSON.parse(JSON.stringify(DEFAULT_OPTIONS));
   }
@@ -547,6 +580,40 @@ function spin() {
 }
 
 spinBtn.addEventListener('click', spin);
+
+const shareBtn = document.getElementById('shareBtn');
+const shareMsg = document.getElementById('shareMsg');
+
+function buildShareUrl() {
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.searchParams.set('data', JSON.stringify(options));
+  return url.toString();
+}
+
+shareBtn.addEventListener('click', async () => {
+  const total = options.reduce((s, o) => s + (Number(o.weight) || 0), 0);
+  if (total <= 0 || options.length < 2) {
+    shareMsg.textContent = '請先設定至少 2 個有效選項再分享';
+    return;
+  }
+  const link = buildShareUrl();
+  try {
+    await navigator.clipboard.writeText(link);
+    shareMsg.textContent = '連結已複製，貼給對方即可載入相同選項';
+  } catch (e) {
+    shareMsg.textContent = link;
+  }
+  setTimeout(() => { shareMsg.textContent = '\u00a0'; }, 5000);
+});
+
+// If loaded via a shared link, persist it locally and clean the address bar
+if (window.location.search.includes('data=')) {
+  saveOptions();
+  const cleanUrl = new URL(window.location.href);
+  cleanUrl.search = '';
+  window.history.replaceState({}, '', cleanUrl.toString());
+}
 
 renderRows();
 </script>
