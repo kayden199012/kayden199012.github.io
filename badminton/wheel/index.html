@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>抽籤轉盤</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #241833;
+    --plum: #2B1B3D;
+    --plum-deep: #1D1229;
+    --paper: #F4EFE3;
+    --gold: #E8B84B;
+    --gold-deep: #C8922E;
+    --teal: #3E8E8A;
+    --coral: #E1614B;
+    --sage: #7C9A6E;
+    --line: rgba(244,239,227,0.14);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(232,184,75,0.10), transparent 60%),
+      radial-gradient(900px 500px at 110% 20%, rgba(62,142,138,0.14), transparent 55%),
+      var(--plum);
+    color: var(--paper);
+    font-family: 'Inter', sans-serif;
+    padding: 32px 20px 60px;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  h1 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: clamp(28px, 4.5vw, 44px);
+    margin: 8px 0 6px;
+    letter-spacing: 0.01em;
+  }
+  header p {
+    color: rgba(244,239,227,0.62);
+    font-size: 14.5px;
+    margin: 0;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 420px) 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* ---- Wheel panel (ticket styling) ---- */
+  .wheel-panel {
+    position: relative;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 36px 20px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    isolation: isolate;
+  }
+  .wheel-panel::before, .wheel-panel::after {
+    content: "";
+    position: absolute;
+    width: 22px; height: 22px;
+    background: var(--ink);
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+    box-shadow: 0 0 0 1px var(--line) inset;
+  }
+  .wheel-panel::before { left: -11px; }
+  .wheel-panel::after { right: -11px; }
+
+  .wheel-stage {
+    position: relative;
+    width: min(360px, 78vw);
+    height: min(360px, 78vw);
+    margin-top: 6px;
+  }
+  .pointer {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 26px solid var(--gold);
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,0.35));
+    z-index: 5;
+  }
+  .pointer::after {
+    content: "";
+    position: absolute;
+    top: -26px; left: -6px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+  #wheelCanvas {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: block;
+    box-shadow:
+      0 0 0 6px var(--plum-deep),
+      0 0 0 8px rgba(232,184,75,0.5),
+      0 18px 40px rgba(0,0,0,0.45);
+    transition: transform 4.2s cubic-bezier(0.13, 0.83, 0.14, 1);
+  }
+  .hub {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 15%; height: 15%;
+    transform: translate(-50%, -50%);
+    background: var(--gold);
+    border-radius: 50%;
+    box-shadow: 0 0 0 4px var(--plum-deep), 0 3px 6px rgba(0,0,0,0.4);
+    z-index: 4;
+  }
+
+  .spin-btn {
+    margin-top: 26px;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 17px;
+    letter-spacing: 0.02em;
+    padding: 13px 40px;
+    border: none;
+    border-radius: 999px;
+    color: var(--plum-deep);
+    background: linear-gradient(180deg, #F3CE73, var(--gold));
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(232,184,75,0.28);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .spin-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 22px rgba(232,184,75,0.36); }
+  .spin-btn:active:not(:disabled) { transform: translateY(0); }
+  .spin-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .result {
+    margin-top: 18px;
+    min-height: 34px;
+    text-align: center;
+  }
+  .result .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(244,239,227,0.5);
+  }
+  .result .name {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 24px;
+    color: var(--gold);
+    opacity: 0;
+    transform: scale(0.85);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+  .result .name.show { opacity: 1; transform: scale(1); }
+
+  /* ---- Control panel ---- */
+  .control-panel {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 24px;
+  }
+  .control-panel h2 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 18px;
+    margin: 0 0 4px;
+  }
+  .control-panel .sub {
+    font-size: 13px;
+    color: rgba(244,239,227,0.55);
+    margin: 0 0 18px;
+  }
+  #optionRows { display: flex; flex-direction: column; gap: 10px; }
+  .option-row {
+    display: grid;
+    grid-template-columns: 22px 1fr 74px 54px 30px;
+    align-items: center;
+    gap: 8px;
+  }
+  .swatch {
+    width: 18px; height: 18px;
+    border-radius: 6px;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .option-row input[type="text"],
+  .option-row input[type="number"] {
+    width: 100%;
+    background: rgba(0,0,0,0.22);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--paper);
+    padding: 8px 9px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+  }
+  .option-row input[type="number"] { font-family: 'JetBrains Mono', monospace; }
+  .option-row input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(244,239,227,0.55);
+    text-align: right;
+  }
+  .del-btn {
+    background: none;
+    border: none;
+    color: rgba(244,239,227,0.4);
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+  }
+  .del-btn:hover { color: var(--coral); }
+
+  .panel-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .btn-ghost {
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 13.5px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--paper);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .btn-ghost:hover { border-color: var(--gold); background: rgba(232,184,75,0.08); }
+
+  .total-line {
+    margin-top: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(244,239,227,0.45);
+    display: flex;
+    justify-content: space-between;
+  }
+  .total-line span:last-child { color: var(--paper); }
+
+  .warn {
+    margin-top: 10px;
+    font-size: 12.5px;
+    color: var(--coral);
+    min-height: 16px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Weighted Draw</div>
+    <h1>抽籤轉盤</h1>
+    <p>自訂選項與機率，依權重隨機抽出結果</p>
+  </header>
+
+  <div class="layout">
+    <div class="wheel-panel">
+      <div class="wheel-stage">
+        <div class="pointer"></div>
+        <canvas id="wheelCanvas" width="640" height="640"></canvas>
+        <div class="hub"></div>
+      </div>
+      <button class="spin-btn" id="spinBtn">開始抽籤</button>
+      <div class="result">
+        <div class="label" id="resultLabel">&nbsp;</div>
+        <div class="name" id="resultName"></div>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <h2>選項設定</h2>
+      <p class="sub">權重數字越大，中籤機率越高（不需要總和為 100）</p>
+      <div id="optionRows"></div>
+      <div class="panel-actions">
+        <button class="btn-ghost" id="addBtn">＋ 新增選項</button>
+        <button class="btn-ghost" id="resetBtn">重設預設值</button>
+      </div>
+      <div class="total-line"><span>權重總和</span><span id="totalWeight">0</span></div>
+      <div class="warn" id="warnMsg">&nbsp;</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const PALETTE = ['#E1614B', '#3E8E8A', '#E8B84B', '#7C9A6E', '#8B6FB3', '#D4886F', '#5A9BC4', '#C77DA6'];
+
+let options = [
+  { name: '大獎', weight: 5, color: PALETTE[0] },
+  { name: '謝謝參加', weight: 40, color: PALETTE[1] },
+  { name: '小禮物', weight: 20, color: PALETTE[2] },
+  { name: '再抽一次', weight: 15, color: PALETTE[3] },
+  { name: '折價券', weight: 20, color: PALETTE[4] },
+];
+
+let currentRotationDeg = 0;
+let spinning = false;
+
+const rowsEl = document.getElementById('optionRows');
+const totalWeightEl = document.getElementById('totalWeight');
+const warnMsg = document.getElementById('warnMsg');
+const spinBtn = document.getElementById('spinBtn');
+const resultLabel = document.getElementById('resultLabel');
+const resultName = document.getElementById('resultName');
+const canvas = document.getElementById('wheelCanvas');
+const ctx = canvas.getContext('2d');
+
+function nextColor() {
+  return PALETTE[options.length % PALETTE.length];
+}
+
+function renderRows() {
+  rowsEl.innerHTML = '';
+  options.forEach((opt, i) => {
+    const total = options.reduce((s, o) => s + (Number(o.weight) || 0), 0);
+    const pct = total > 0 ? ((Number(opt.weight) || 0) / total * 100).toFixed(1) : '0.0';
+
+    const row = document.createElement('div');
+    row.className = 'option-row';
+
+    row.innerHTML = `
+      <input type="color" class="swatch" value="${opt.color}" data-i="${i}" data-field="color">
+      <input type="text" value="${opt.name}" data-i="${i}" data-field="name" maxlength="24">
+      <input type="number" value="${opt.weight}" min="0" step="0.5" data-i="${i}" data-field="weight">
+      <span class="pct">${pct}%</span>
+      <button class="del-btn" data-i="${i}" title="刪除">✕</button>
+    `;
+    rowsEl.appendChild(row);
+  });
+
+  totalWeightEl.textContent = options.reduce((s, o) => s + (Number(o.weight) || 0), 0);
+  checkValidity();
+  drawWheel();
+}
+
+function checkValidity() {
+  const total = options.reduce((s, o) => s + (Number(o.weight) || 0), 0);
+  const validCount = options.filter(o => (Number(o.weight) || 0) > 0 && o.name.trim() !== '').length;
+
+  if (options.length < 2) {
+    warnMsg.textContent = '至少需要 2 個選項才能抽籤';
+    spinBtn.disabled = true;
+  } else if (total <= 0 || validCount < 2) {
+    warnMsg.textContent = '至少需要 2 個權重大於 0 且有名稱的選項';
+    spinBtn.disabled = true;
+  } else {
+    warnMsg.textContent = '\u00a0';
+    spinBtn.disabled = spinning;
+  }
+}
+
+rowsEl.addEventListener('input', (e) => {
+  const i = e.target.dataset.i;
+  const field = e.target.dataset.field;
+  if (i === undefined) return;
+  if (field === 'weight') {
+    options[i].weight = e.target.value === '' ? 0 : Number(e.target.value);
+  } else if (field === 'name') {
+    options[i].name = e.target.value;
+  } else if (field === 'color') {
+    options[i].color = e.target.value;
+  }
+  // re-render percentages/total without losing focus on text/number inputs
+  const total = options.reduce((s, o) => s + (Number(o.weight) || 0), 0);
+  totalWeightEl.textContent = total;
+  rowsEl.querySelectorAll('.option-row').forEach((row, idx) => {
+    const pctSpan = row.querySelector('.pct');
+    const pct = total > 0 ? ((Number(options[idx].weight) || 0) / total * 100).toFixed(1) : '0.0';
+    pctSpan.textContent = pct + '%';
+  });
+  checkValidity();
+  drawWheel();
+});
+
+rowsEl.addEventListener('click', (e) => {
+  if (e.target.classList.contains('del-btn')) {
+    const i = Number(e.target.dataset.i);
+    options.splice(i, 1);
+    renderRows();
+  }
+});
+
+document.getElementById('addBtn').addEventListener('click', () => {
+  options.push({ name: '新選項', weight: 10, color: nextColor() });
+  renderRows();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  options = [
+    { name: '大獎', weight: 5, color: PALETTE[0] },
+    { name: '謝謝參加', weight: 40, color: PALETTE[1] },
+    { name: '小禮物', weight: 20, color: PALETTE[2] },
+    { name: '再抽一次', weight: 15, color: PALETTE[3] },
+    { name: '折價券', weight: 20, color: PALETTE[4] },
+  ];
+  currentRotationDeg = 0;
+  canvas.style.transition = 'none';
+  canvas.style.transform = `rotate(0deg)`;
+  resultName.classList.remove('show');
+  resultLabel.textContent = '\u00a0';
+  requestAnimationFrame(() => { canvas.style.transition = ''; });
+  renderRows();
+});
+
+function drawWheel() {
+  const size = canvas.width;
+  const cx = size / 2, cy = size / 2, r = size / 2 - 6;
+  ctx.clearRect(0, 0, size, size);
+
+  const total = options.reduce((s, o) => s + (Number(o.weight) || 0), 0);
+  if (total <= 0) return;
+
+  let angle = -Math.PI / 2; // start at top
+  options.forEach((opt) => {
+    const w = Math.max(Number(opt.weight) || 0, 0);
+    const slice = (w / total) * 2 * Math.PI;
+    if (slice <= 0) return;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, angle, angle + slice);
+    ctx.closePath();
+    ctx.fillStyle = opt.color;
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle + slice / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(0,0,0,0.72)';
+    ctx.font = '600 22px Fredoka, sans-serif';
+    const label = opt.name.length > 10 ? opt.name.slice(0, 9) + '…' : opt.name;
+    ctx.fillText(label, r - 24, 8);
+    ctx.restore();
+
+    angle += slice;
+  });
+}
+
+function weightedPick() {
+  const total = options.reduce((s, o) => s + (Number(o.weight) || 0), 0);
+  let r = Math.random() * total;
+  let cum = 0;
+  for (let i = 0; i < options.length; i++) {
+    cum += Number(options[i].weight) || 0;
+    if (r <= cum) return i;
+  }
+  return options.length - 1;
+}
+
+function segmentBoundsDeg(index) {
+  const total = options.reduce((s, o) => s + (Number(o.weight) || 0), 0);
+  let cum = 0;
+  for (let i = 0; i < index; i++) cum += Number(options[i].weight) || 0;
+  const startDeg = (cum / total) * 360;
+  const sliceDeg = (Number(options[index].weight) / total) * 360;
+  return { startDeg, sliceDeg };
+}
+
+function spin() {
+  if (spinning) return;
+  const total = options.reduce((s, o) => s + (Number(o.weight) || 0), 0);
+  if (total <= 0 || options.length < 2) return;
+
+  spinning = true;
+  spinBtn.disabled = true;
+  resultName.classList.remove('show');
+  resultLabel.textContent = '轉動中…';
+
+  const winner = weightedPick();
+  const { startDeg, sliceDeg } = segmentBoundsDeg(winner);
+  const targetLocal = startDeg + sliceDeg * (0.15 + Math.random() * 0.7);
+
+  const desiredFinalMod = (360 - targetLocal + 360) % 360;
+  const currentMod = ((currentRotationDeg % 360) + 360) % 360;
+  const diff = (desiredFinalMod - currentMod + 360) % 360;
+  const extraSpins = 6 + Math.floor(Math.random() * 3);
+  const addedRotation = diff + extraSpins * 360;
+
+  currentRotationDeg += addedRotation;
+  canvas.style.transform = `rotate(${currentRotationDeg}deg)`;
+
+  const onEnd = () => {
+    canvas.removeEventListener('transitionend', onEnd);
+    spinning = false;
+    checkValidity();
+    resultLabel.textContent = '中籤結果';
+    resultName.textContent = options[winner].name;
+    resultName.classList.add('show');
+  };
+  canvas.addEventListener('transitionend', onEnd);
+}
+
+spinBtn.addEventListener('click', spin);
+
+renderRows();
+</script>
+</body>
+</html>
