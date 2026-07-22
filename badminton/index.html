@@ -2,7 +2,6 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>羽球賽程表</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
@@ -163,6 +162,46 @@
   }
   .score-box.mid{ flex: 0 0 44px; }
 
+  .pick-row{
+    display: grid;
+    grid-template-columns: 1fr 44px 1fr;
+    align-items: stretch;
+    gap: 8px;
+    padding: 14px 10px;
+  }
+  .pick-row .vs{
+    padding: 0;
+    margin: -14px 0;
+  }
+  .pick-col{
+    display:flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+  }
+  .pick-col select{
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-align: center;
+    text-align-last: center;
+    padding: 6px 8px;
+    border: 1.5px solid var(--ink);
+    border-radius: 100px;
+    background: var(--court-line);
+    color: var(--ink);
+  }
+  .extra-tag{
+    display:inline-block;
+    background: var(--accent);
+    color: var(--ink);
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 100px;
+    margin-left: 8px;
+  }
+
   .saved-flag{
     text-align:center;
     font-size: 0.7rem;
@@ -230,6 +269,7 @@
   @media (max-width: 600px){
     h1{ font-size: 1.8rem; }
     .match-row{ grid-template-columns: 1fr 34px 1fr; }
+    .pick-row{ grid-template-columns: 1fr 30px 1fr; }
     .player{ font-size: 0.9rem; padding: 5px 8px; min-width: 60px; }
   }
 
@@ -246,7 +286,7 @@
   <header>
     <div>
       <h1>羽球<span>賽程表</span></h1>
-      <div class="subtitle">雙打友誼賽・共 5 場・每人上場 2 場</div>
+      <div class="subtitle">雙打友誼賽・共 6 場・第6場自選對戰</div>
     </div>
     <button class="badge" id="resetBtn">重設所有分數</button>
   </header>
@@ -254,7 +294,7 @@
   <div class="games" id="games"></div>
 
   <div class="note">
-    <b>積分計算方式：</b>每場比賽結束後填入雙方分數，個人積分 = 該球員參與的兩場「淨勝分（得分－失分）」加總，若加總為負則以 0 分計。分數會自動儲存在此瀏覽器中，重新整理頁面也不會消失。
+    <b>積分計算方式：</b>每場比賽結束後填入雙方分數，個人積分 = 該球員參與比賽的「淨勝分（得分－失分）」加總，若加總為負則以 0 分計。第 6 場為自選對戰，先選好左右隊各 2 位球員再填分數即可計入積分。分數會自動儲存在此瀏覽器中，重新整理頁面也不會消失。
   </div>
 
   <div class="standings">
@@ -268,22 +308,26 @@
   </div>
 
   <footer>
-    <span>10 位球員・5 場比賽</span>
-    <span>每人恰好上場 2 場</span>
+    <span>10 位球員・6 場比賽</span>
+    <span>第6場為自選對戰（上訴賽）</span>
   </footer>
 
 </div>
 
 <script>
-  const GAMES = [
-  { left: ["哲瑋","爸爸"], right: ["KK","Abby"] },
-  { left: ["哲瑋","寧倢"], right: ["KK","茄魚"] },
-  { left: ["Amber","寧倢"], right: ["亮宇","茄魚"] },
-  { left: ["心育","Abby"], right: ["炸哥","爸爸"] },
-  { left: ["Amber","亮宇"], right: ["心育","炸哥"] },
-];
+  const ALL_PLAYERS = ["哲瑋","KK","Amber","亮宇","心育","炸哥","茄魚","寧倢","Abby","爸爸"];
 
-  const STORAGE_KEY = "badminton_scores_v1";
+  const GAMES = [
+    { left: ["哲瑋","爸爸"], right: ["KK","Abby"] },
+    { left: ["哲瑋","寧倢"], right: ["KK","茄魚"] },
+    { left: ["Amber","寧倢"], right: ["亮宇","茄魚"] },
+    { left: ["心育","Abby"], right: ["炸哥","爸爸"] },
+    { left: ["Amber","亮宇"], right: ["心育","炸哥"] },
+  ];
+
+  const EXTRA_KEY = "g5"; // 第6場（自選對戰）
+
+  const STORAGE_KEY = "badminton_scores_v2";
 
   function loadScores(){
     try{
@@ -303,6 +347,15 @@
   }
 
   let scores = loadScores();
+
+  function playerSelect(prefix, side, slot, selected){
+    const options = ALL_PLAYERS.map(p =>
+      `<option value="${p}" ${p === selected ? "selected" : ""}>${p}</option>`
+    ).join("");
+    return `<select data-role="extra-player" data-side="${side}" data-slot="${slot}">
+      <option value="">選擇球員</option>${options}
+    </select>`;
+  }
 
   function renderGames(){
     const container = document.getElementById("games");
@@ -336,9 +389,59 @@
       container.appendChild(el);
     });
 
-    container.querySelectorAll("input").forEach(input => {
+    // 第 6 場：自選對戰（上訴賽）
+    const extra = scores[EXTRA_KEY] || {};
+    const extraLeft = extra.leftPlayers || ["", ""];
+    const extraRight = extra.rightPlayers || ["", ""];
+
+    const extraEl = document.createElement("div");
+    extraEl.className = "game";
+    extraEl.innerHTML = `
+      <div class="game-num">06<small>GAME</small><span class="extra-tag">自選・上訴賽</span></div>
+      <div class="pick-row">
+        <div class="pick-col">
+          ${playerSelect("g5","left",0,extraLeft[0])}
+          ${playerSelect("g5","left",1,extraLeft[1])}
+        </div>
+        <div class="vs">VS</div>
+        <div class="pick-col">
+          ${playerSelect("g5","right",0,extraRight[0])}
+          ${playerSelect("g5","right",1,extraRight[1])}
+        </div>
+      </div>
+      <div class="score-row">
+        <div class="score-box">左隊 <input type="number" inputmode="numeric" data-game="${EXTRA_KEY}" data-side="left" value="${extra.left ?? ""}"></div>
+        <div class="score-box mid">:</div>
+        <div class="score-box">右隊 <input type="number" inputmode="numeric" data-game="${EXTRA_KEY}" data-side="right" value="${extra.right ?? ""}"></div>
+      </div>
+      <div class="saved-flag" id="flag-${EXTRA_KEY}">已儲存 ✓</div>
+    `;
+    container.appendChild(extraEl);
+
+    container.querySelectorAll("input[data-game]").forEach(input => {
       input.addEventListener("input", onScoreChange);
     });
+    container.querySelectorAll("select[data-role='extra-player']").forEach(sel => {
+      sel.addEventListener("change", onExtraPlayerChange);
+    });
+  }
+
+  function onExtraPlayerChange(e){
+    const side = e.target.dataset.side;
+    const slot = parseInt(e.target.dataset.slot, 10);
+    if(!scores[EXTRA_KEY]) scores[EXTRA_KEY] = { left: "", right: "", leftPlayers: ["",""], rightPlayers: ["",""] };
+    const field = side === "left" ? "leftPlayers" : "rightPlayers";
+    if(!scores[EXTRA_KEY][field]) scores[EXTRA_KEY][field] = ["",""];
+    scores[EXTRA_KEY][field][slot] = e.target.value;
+    saveScores(scores);
+    renderStandings();
+
+    const flag = document.getElementById("flag-" + EXTRA_KEY);
+    if(flag){
+      flag.classList.add("show");
+      clearTimeout(flagTimeout);
+      flagTimeout = setTimeout(() => flag.classList.remove("show"), 1200);
+    }
   }
 
   let flagTimeout;
@@ -370,8 +473,27 @@
       g.right.forEach(p => { net[p] = (net[p] || 0) - diff; });
     });
 
-    const allPlayers = new Set();
-    GAMES.forEach(g => { g.left.forEach(p=>allPlayers.add(p)); g.right.forEach(p=>allPlayers.add(p)); });
+    // 第 6 場：自選對戰，只有 4 位球員都選好、都不重複、分數都填寫才計分
+    const extra = scores[EXTRA_KEY];
+    if(extra){
+      const leftPlayers = (extra.leftPlayers || []).filter(Boolean);
+      const rightPlayers = (extra.rightPlayers || []).filter(Boolean);
+      const allChosen = [...leftPlayers, ...rightPlayers];
+      const noDupes = new Set(allChosen).size === allChosen.length;
+      const hasScores = extra.left !== "" && extra.right !== "" && extra.left !== undefined && extra.right !== undefined;
+
+      if(leftPlayers.length === 2 && rightPlayers.length === 2 && noDupes && hasScores){
+        const l = parseInt(extra.left, 10);
+        const r = parseInt(extra.right, 10);
+        if(!isNaN(l) && !isNaN(r)){
+          const diff = l - r;
+          leftPlayers.forEach(p => { net[p] = (net[p] || 0) + diff; });
+          rightPlayers.forEach(p => { net[p] = (net[p] || 0) - diff; });
+        }
+      }
+    }
+
+    const allPlayers = new Set(ALL_PLAYERS);
 
     const rows = Array.from(allPlayers).map(p => ({ name: p, score: Math.max(net[p] || 0, 0) }));
     rows.sort((a,b) => b.score - a.score);
