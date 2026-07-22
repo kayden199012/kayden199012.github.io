@@ -19,6 +19,10 @@
 
   *{ box-sizing: border-box; }
 
+  html, body{ max-width: 100%; overflow-x: hidden; }
+
+  select, input, button{ max-width: 100%; }
+
   body{
     margin:0;
     background: var(--paper);
@@ -398,11 +402,24 @@
   .note b{ color: var(--accent); }
 
   @media (max-width: 600px){
-    h1{ font-size: 1.8rem; }
-    .match-row{ grid-template-columns: 1fr 34px 1fr; }
-    .match-builder{ grid-template-columns: 1fr 24px 1fr; }
-    .player{ font-size: 0.9rem; padding: 5px 8px; min-width: 60px; }
-    .tab-btn{ font-size: 0.8rem; padding: 10px 4px; }
+    h1{ font-size: 1.6rem; }
+    .subtitle{ font-size: 0.85rem; }
+    .match-row{ grid-template-columns: 1fr 30px 1fr; }
+    .match-builder{ grid-template-columns: 1fr 20px 1fr; gap: 6px; }
+    .player{ font-size: 0.85rem; padding: 5px 6px; min-width: 0; }
+    .tab-btn{ font-size: 0.75rem; padding: 10px 2px; white-space: normal; line-height: 1.3; }
+    .add-row{ flex-wrap: wrap; }
+    .add-row input[type="text"]{ min-width: 0; }
+    .match-builder select{ font-size: 0.8rem; padding: 8px 4px; }
+    .score-box{ font-size: 0.75rem; padding: 8px 4px; }
+    .score-box input{ width: 40px; }
+    .match-list-item{ flex-wrap: wrap; gap: 8px; font-size: 0.82rem; }
+    table{ font-size: 0.85rem; }
+    th, td{ padding: 8px 6px; }
+  }
+
+  @media (max-width: 380px){
+    .game-num .extra-tag{ display:block; margin: 4px 0 0; }
   }
 
   @media print{
