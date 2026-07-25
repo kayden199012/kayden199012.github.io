@@ -679,7 +679,8 @@
     });
 
     container.querySelectorAll("input[data-match]").forEach(input => {
-      input.addEventListener("input", onScoreChange);
+      input.addEventListener("input", onScoreInput);
+      input.addEventListener("blur", onScoreBlur);
     });
   }
 
@@ -697,16 +698,22 @@
     }
   }
 
-  function onScoreChange(e){
-    const id = e.target.dataset.match;
-    const side = e.target.dataset.side;
-
+  function onScoreInput(e){
     const digitsOnly = e.target.value.replace(/[^0-9]/g, "");
     if(digitsOnly !== e.target.value){
       e.target.value = digitsOnly;
     }
+  }
+
+  function onScoreBlur(e){
+    const id = e.target.dataset.match;
+    const side = e.target.dataset.side;
+    const digitsOnly = e.target.value.replace(/[^0-9]/g, "");
 
     if(!state.scores[id]) state.scores[id] = { left: "", right: "" };
+
+    if(state.scores[id][side] === digitsOnly) return; // 沒有變更就不重複儲存
+
     state.scores[id][side] = digitsOnly;
     saveState();
     renderStandings();
