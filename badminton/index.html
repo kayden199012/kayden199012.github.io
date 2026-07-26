@@ -172,6 +172,29 @@
     cursor: not-allowed;
   }
 
+  .format-toggle{
+    display:flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .format-btn{
+    flex:1;
+    background: var(--court-line);
+    border: 1.5px solid var(--ink);
+    border-radius: 100px;
+    padding: 8px 12px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .format-btn.active{
+    background: var(--court-green);
+    color: var(--paper);
+    border-color: var(--court-green);
+  }
+
   .match-builder{
     display: grid;
     grid-template-columns: 1fr 30px 1fr;
@@ -446,11 +469,15 @@
         <input type="text" id="newPlayerInput" placeholder="輸入新球員姓名">
         <button id="addPlayerBtn">新增球員</button>
       </div>
-      <div class="hint">移除球員不會刪除已存在的賽事，但該球員將不會出現在排名中。</div>
+      <div class="hint">若球員已被排入賽事，移除前會先詢問是否一併刪除相關賽事。</div>
     </div>
 
     <div class="panel-section">
       <h2>新增賽事</h2>
+      <div class="format-toggle" id="formatToggle">
+        <button class="format-btn active" data-format="2v2">雙打 2v2</button>
+        <button class="format-btn" data-format="1v1">單打 1v1</button>
+      </div>
       <div class="match-builder">
         <div class="side">
           <select id="pickL1"><option value="">左隊球員 1</option></select>
@@ -463,7 +490,7 @@
         </div>
       </div>
       <button class="primary-btn" id="addMatchBtn">新增這場賽事</button>
-      <div class="error-text" id="matchError">請選擇 4 位不重複的球員</div>
+      <div class="error-text" id="matchError">請選擇不重複的球員</div>
 
       <div style="margin-top:20px;" id="matchList"></div>
     </div>
@@ -551,7 +578,27 @@
 
     el.querySelectorAll("button").forEach(btn => {
       btn.addEventListener("click", () => {
-        state.players = state.players.filter(p => p !== btn.dataset.player);
+        const name = btn.dataset.player;
+        const affected = state.matches.filter(m => m.left.includes(name) || m.right.includes(name));
+
+        if(affected.length > 0){
+          confirmDialog({
+            title: "同時移除相關賽事？",
+            html: `<b>${name}</b> 出現在 ${affected.length} 場賽事中，移除球員將一併刪除這些賽事與其分數。`,
+            confirmText: "移除球員及相關賽事",
+          }).then(ok => {
+            if(!ok) return;
+            const affectedIds = affected.map(m => m.id);
+            state.matches = state.matches.filter(m => !affectedIds.includes(m.id));
+            affectedIds.forEach(id => delete state.scores[id]);
+            state.players = state.players.filter(p => p !== name);
+            saveState();
+            renderAll();
+          });
+          return;
+        }
+
+        state.players = state.players.filter(p => p !== name);
         saveState();
         renderAll();
       });
@@ -577,6 +624,27 @@
   });
 
   // ---------------- Tab1: Match builder ----------------
+  let matchFormat = "2v2";
+
+  document.querySelectorAll(".format-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      matchFormat = btn.dataset.format;
+      document.querySelectorAll(".format-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      updateFormatUI();
+    });
+  });
+
+  function updateFormatUI(){
+    const isSingles = matchFormat === "1v1";
+    document.getElementById("pickL2").style.display = isSingles ? "none" : "";
+    document.getElementById("pickR2").style.display = isSingles ? "none" : "";
+    if(isSingles){
+      document.getElementById("pickL2").value = "";
+      document.getElementById("pickR2").value = "";
+    }
+  }
+
   function fillPickSelect(id, placeholder){
     const sel = document.getElementById(id);
     const current = sel.value;
@@ -598,7 +666,11 @@
     const r2 = document.getElementById("pickR2").value;
     const errorEl = document.getElementById("matchError");
 
-    const chosen = [l1,l2,r1,r2];
+    const isSingles = matchFormat === "1v1";
+    const left = isSingles ? [l1] : [l1, l2];
+    const right = isSingles ? [r1] : [r1, r2];
+
+    const chosen = [...left, ...right];
     const allFilled = chosen.every(Boolean);
     const noDupes = new Set(chosen).size === chosen.length;
 
@@ -610,7 +682,7 @@
 
     const id = "m" + state.nextMatchNum;
     state.nextMatchNum += 1;
-    state.matches.push({ id, left: [l1,l2], right: [r1,r2] });
+    state.matches.push({ id, left, right });
     saveState();
 
     ["pickL1","pickL2","pickR1","pickR2"].forEach(id => document.getElementById(id).value = "");
@@ -625,15 +697,34 @@
     }
     el.innerHTML = state.matches.map((m, i) => `
       <div class="match-list-item">
-        <span>第 ${i+1} 場：${m.left[0]}／${m.left[1]}　VS　${m.right[0]}／${m.right[1]}</span>
+        <span>第 ${i+1} 場：${m.left.join("／")}　VS　${m.right.join("／")}</span>
         <button class="del-btn" data-id="${m.id}">刪除</button>
       </div>
     `).join("");
 
     el.querySelectorAll(".del-btn").forEach(btn => {
       btn.addEventListener("click", () => {
-        state.matches = state.matches.filter(m => m.id !== btn.dataset.id);
-        delete state.scores[btn.dataset.id];
+        const id = btn.dataset.id;
+        const s = state.scores[id];
+        const hasScore = s && s.left !== "" && s.right !== "" && s.left !== undefined && s.right !== undefined;
+
+        if(hasScore){
+          confirmDialog({
+            title: "刪除已計分的賽事？",
+            html: `這場賽事已經填入比分（${s.left} : ${s.right}），刪除後分數也會一併移除。`,
+            confirmText: "確定刪除",
+          }).then(ok => {
+            if(!ok) return;
+            state.matches = state.matches.filter(m => m.id !== id);
+            delete state.scores[id];
+            saveState();
+            renderAll();
+          });
+          return;
+        }
+
+        state.matches = state.matches.filter(m => m.id !== id);
+        delete state.scores[id];
         saveState();
         renderAll();
       });
@@ -662,13 +753,11 @@
             <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="分數" data-match="${m.id}" data-side="left" value="${saved.left}">
           </div>
           <div class="team">
-            <span class="player">${m.left[0]}</span>
-            <span class="player">${m.left[1]}</span>
+            ${m.left.map(p => `<span class="player">${p}</span>`).join("")}
           </div>
           <div class="vs">VS</div>
           <div class="team">
-            <span class="player">${m.right[0]}</span>
-            <span class="player">${m.right[1]}</span>
+            ${m.right.map(p => `<span class="player">${p}</span>`).join("")}
           </div>
           <div class="score-col">
             <input type="text" inputmode="numeric" pattern="[0-9]*" placeholder="分數" data-match="${m.id}" data-side="right" value="${saved.right}">
@@ -696,6 +785,23 @@
     if(Toast){
       Toast.fire({ icon: "success", title: "已儲存" });
     }
+  }
+
+  // 共用確認對話框：優先使用 SweetAlert2，若不可用則退回瀏覽器內建 confirm()
+  function confirmDialog({ title, html, confirmText }){
+    if(window.Swal){
+      return Swal.fire({
+        title,
+        html,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: confirmText || "確定刪除",
+        cancelButtonText: "取消",
+        confirmButtonColor: "#b3402a",
+        cancelButtonColor: "#1f6b4d",
+      }).then(res => res.isConfirmed);
+    }
+    return Promise.resolve(window.confirm(title + "\n" + html.replace(/<[^>]+>/g, "")));
   }
 
   function onScoreInput(e){
@@ -791,6 +897,7 @@
   function renderAll(){
     renderPlayerList();
     renderPickSelects();
+    updateFormatUI();
     renderMatchList();
     renderGames();
     renderStandings();
