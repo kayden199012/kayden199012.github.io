@@ -4,356 +4,127 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>羽球場地預約</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
-  :root {
-    --court-green: #1f6f4a;
-    --court-green-dark: #14503468;
-    --line-white: #f7f5ef;
-    --shuttle: #e8b400;
-    --ink: #1c231f;
-    --ink-soft: #5c675f;
-    --danger: #c1443a;
-    --card-bg: #ffffff;
-    --bg: #eef2ec;
-    --radius: 14px;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-    min-height: 100vh;
-  }
-  .top-bar {
-    background: var(--court-green);
-    color: var(--line-white);
-    padding: 22px 20px;
-    position: relative;
-    overflow: hidden;
-  }
-  .top-bar::after {
-    content: "";
-    position: absolute;
-    right: -30px; top: -30px;
-    width: 140px; height: 140px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.06);
-  }
-  .top-bar h1 {
-    margin: 0;
-    font-size: 22px;
-    letter-spacing: 0.5px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .top-bar .court-lines {
-    font-size: 13px;
-    opacity: 0.85;
-    margin-top: 4px;
-  }
-  .wrap {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 20px 16px 60px;
-  }
-
-  /* Login */
-  #login-screen {
-    display: none;
-    max-width: 360px;
-    margin: 60px auto;
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    padding: 28px 24px;
-    box-shadow: 0 8px 24px rgba(20,40,30,0.08);
-    text-align: center;
-  }
-  #login-screen .shuttle-icon { font-size: 34px; }
-  #login-screen h2 { margin: 10px 0 4px; font-size: 18px; }
-  #login-screen p { color: var(--ink-soft); font-size: 13px; margin-bottom: 18px; }
-
-  /* 自動登入中的載入畫面 */
-  #loading-screen {
-    display: none;
-    max-width: 360px;
-    margin: 60px auto;
-    text-align: center;
-    padding: 28px 24px;
-    color: var(--ink-soft);
-    font-size: 14px;
-  }
-  .spinner {
-    width: 30px;
-    height: 30px;
-    border: 3px solid #d8ddd6;
-    border-top-color: var(--court-green);
-    border-radius: 50%;
-    margin: 0 auto 14px;
-    animation: spin 0.7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  input[type="password"], input[type="text"], input[type="date"], input[type="time"] {
-    width: 100%;
-    padding: 11px 12px;
-    border: 1px solid #d8ddd6;
-    border-radius: 9px;
-    font-size: 15px;
-    background: #fbfbf9;
-    color: var(--ink);
-  }
-  input:focus { outline: 2px solid var(--court-green); outline-offset: 1px; }
-  .btn {
-    display: inline-block;
-    border: none;
-    border-radius: 9px;
-    padding: 11px 18px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.05s ease;
-  }
-  .btn:active { transform: scale(0.98); }
-  .btn-primary { background: var(--court-green); color: white; width: 100%; }
-  .btn-danger { background: transparent; color: var(--danger); border: 1px solid #f0d3d0; padding: 6px 10px; font-size: 13px; }
-  #login-error, #form-error { color: var(--danger); font-size: 13px; margin-top: 10px; min-height: 16px; }
-
-  /* App */
-  #app-screen { display: none; }
-  .section-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--ink-soft);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin: 26px 0 10px;
-  }
-  .card {
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    padding: 18px;
-    box-shadow: 0 2px 10px rgba(20,40,30,0.05);
-  }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .field { margin-bottom: 12px; }
-  .field label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 5px; }
-
-  .day-group { margin-bottom: 18px; }
-  .day-label {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin-bottom: 8px;
-    padding-left: 2px;
-  }
-  .day-label .date-main { font-size: 16px; font-weight: 700; }
-  .day-label .date-week { font-size: 12px; color: var(--ink-soft); }
-
-  .slot {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 14px;
-    border-radius: 10px;
-    background: var(--card-bg);
-    box-shadow: 0 1px 6px rgba(20,40,30,0.05);
-    margin-bottom: 8px;
-    border-left: 4px solid var(--shuttle);
-  }
-  .slot .time { font-weight: 700; font-size: 15px; }
-  .slot .meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
-  .slot .right { display: flex; align-items: center; gap: 10px; }
-
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--ink-soft);
-    font-size: 14px;
-  }
-  .empty-state .shuttle-icon { font-size: 28px; display: block; margin-bottom: 8px; }
-
-  #toast {
-    position: fixed;
-    bottom: 24px; left: 50%;
-    transform: translateX(-50%);
-    background: var(--ink);
-    color: white;
-    padding: 10px 18px;
-    border-radius: 20px;
-    font-size: 13px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-  }
-  #toast.show { opacity: 1; }
-
-  .logout-link {
-    color: rgba(255,255,255,0.85);
-    font-size: 12px;
-    text-decoration: underline;
-    cursor: pointer;
-    position: absolute;
-    right: 20px;
-    top: 26px;
-  }
-
-  /* 浮動新增按鈕 */
+  body { background: #f4f6f8; }
+  .app-wrap { max-width: 640px; margin: 0 auto; }
+  .top-bar { position: relative; }
+  .top-bar .logout-link { position: absolute; right: 16px; top: 18px; }
+  .slot-card { border-left-width: 4px !important; }
+  #loading-screen, #login-screen { max-width: 360px; }
   .fab {
-    position: fixed;
-    right: 20px;
-    bottom: 24px;
     width: 56px;
     height: 56px;
-    border-radius: 50%;
-    background: var(--court-green);
-    color: white;
+    right: 20px;
+    bottom: 24px;
     font-size: 28px;
     line-height: 1;
-    border: none;
-    box-shadow: 0 8px 20px rgba(20,60,40,0.3);
-    cursor: pointer;
-    z-index: 50;
-    display: none;
-    align-items: center;
-    justify-content: center;
+    z-index: 1030;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
   }
-  .fab:active { transform: scale(0.95); }
-
-  /* 新增預約彈跳視窗 */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(15,25,20,0.5);
-    display: none;
-    align-items: flex-end;
-    justify-content: center;
-    z-index: 100;
-  }
-  .modal-overlay.show { display: flex; }
-  .modal-sheet {
-    background: var(--card-bg);
-    width: 100%;
-    max-width: 480px;
-    border-radius: 20px 20px 0 0;
-    padding: 22px 20px calc(20px + env(safe-area-inset-bottom));
-    max-height: 88vh;
-    overflow-y: auto;
-    animation: sheetUp 0.22s ease;
-  }
-  @keyframes sheetUp {
-    from { transform: translateY(24px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-  @media (min-width: 600px) {
-    .modal-overlay { align-items: center; }
-    .modal-sheet { border-radius: var(--radius); }
-  }
-  .modal-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-  .modal-header h3 { margin: 0; font-size: 17px; }
-  .modal-close {
-    background: none;
-    border: none;
-    font-size: 20px;
-    color: var(--ink-soft);
-    cursor: pointer;
-    padding: 4px 8px;
-  }
-
-  /* flatpickr 微調,配合整體配色 */
   .flatpickr-day.selected, .flatpickr-day.selected:hover {
-    background: var(--court-green);
-    border-color: var(--court-green);
-  }
-  .flatpickr-time input:focus, .flatpickr-time .flatpickr-am-pm:focus {
-    outline: 2px solid var(--court-green);
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
   }
 </style>
 </head>
 <body>
 
-<div class="top-bar">
-  <h1><span>🏸</span> 羽球場地預約</h1>
-  <div class="court-lines">大家一起約時間,不用再截圖對時段</div>
-  <span class="logout-link" id="logout-btn" style="display:none;">登出</span>
+<div class="top-bar bg-primary text-white py-4 px-3">
+  <div class="app-wrap">
+    <h1 class="h4 mb-1">🏸 羽球場地預約</h1>
+    <div class="small text-white-50">大家一起約時間,不用再截圖對時段</div>
+  </div>
+  <span class="logout-link small text-white-50 text-decoration-underline d-none" id="logout-btn" role="button">登出</span>
 </div>
 
-<div class="wrap">
+<div class="app-wrap p-3 pb-5">
 
   <!-- 自動登入中 -->
-  <div id="loading-screen">
-    <div class="spinner"></div>
-    正在自動登入…
+  <div id="loading-screen" class="text-center py-5 mx-auto d-none">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-3 text-muted small mb-0">正在自動登入…</p>
   </div>
 
   <!-- 登入畫面 -->
-  <div id="login-screen">
-    <div class="shuttle-icon">🏸</div>
-    <h2>輸入通關密碼</h2>
-    <p>這是我們球友之間共用的密碼,不要外流喔</p>
-    <input type="password" id="password-input" placeholder="密碼" autocomplete="current-password">
-    <div style="height:10px"></div>
-    <button class="btn btn-primary" id="login-btn">進入</button>
-    <div id="login-error"></div>
+  <div id="login-screen" class="card mx-auto mt-5 d-none">
+    <div class="card-body text-center p-4">
+      <div class="fs-2">🏸</div>
+      <h2 class="h5 mt-2 mb-1">輸入通關密碼</h2>
+      <p class="text-muted small mb-3">這是我們球友之間共用的密碼,不要外流喔</p>
+      <input type="password" id="password-input" class="form-control mb-2" placeholder="密碼" autocomplete="current-password">
+      <button class="btn btn-primary w-100" id="login-btn">進入</button>
+      <div id="login-error" class="text-danger small mt-2"></div>
+    </div>
   </div>
 
   <!-- 主畫面 -->
-  <div id="app-screen">
-    <div class="section-title">已預約時段</div>
+  <div id="app-screen" class="d-none">
+    <h6 class="text-uppercase text-muted fw-bold mt-2 mb-2" style="letter-spacing:1px;">已預約時段</h6>
     <div id="bookings-list"></div>
   </div>
+
 </div>
 
 <!-- 浮動新增按鈕 -->
-<button class="fab" id="open-add-modal">＋</button>
+<button class="btn btn-primary rounded-circle position-fixed fab d-none" id="open-add-modal"
+        data-bs-toggle="modal" data-bs-target="#addModal">＋</button>
 
 <!-- 新增預約彈跳視窗 -->
-<div class="modal-overlay" id="add-modal-overlay">
-  <div class="modal-sheet">
-    <div class="modal-header">
-      <h3>新增預約</h3>
-      <button class="modal-close" id="close-add-modal">✕</button>
-    </div>
-
-    <div class="field">
-      <label>日期</label>
-      <input type="text" id="input-date" placeholder="選擇日期" readonly>
-    </div>
-    <div class="grid-2">
-      <div class="field">
-        <label>開始時間</label>
-        <input type="text" id="input-start" placeholder="選擇時間" readonly>
+<div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">新增預約</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="field">
-        <label>結束時間</label>
-        <input type="text" id="input-end" placeholder="選擇時間" readonly>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label small text-muted">日期</label>
+          <input type="text" id="input-date" class="form-control" placeholder="選擇日期" readonly>
+        </div>
+        <div class="row">
+          <div class="col-6 mb-3">
+            <label class="form-label small text-muted">開始時間</label>
+            <input type="text" id="input-start" class="form-control" placeholder="選擇時間" readonly>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label small text-muted">結束時間</label>
+            <input type="text" id="input-end" class="form-control" placeholder="選擇時間" readonly>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small text-muted">場地 / 地點</label>
+          <input type="text" id="input-location" class="form-control" placeholder="例如:XX 羽球館 3 號場">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small text-muted">你的名字</label>
+          <input type="text" id="input-name" class="form-control" placeholder="讓大家知道是誰約的">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small text-muted">備註(選填)</label>
+          <input type="text" id="input-note" class="form-control" placeholder="例如:缺兩人 / 雙打">
+        </div>
+        <div id="form-error" class="text-danger small"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary w-100" id="add-btn">新增時段</button>
       </div>
     </div>
-    <div class="field">
-      <label>場地 / 地點</label>
-      <input type="text" id="input-location" placeholder="例如:XX 羽球館 3 號場">
-    </div>
-    <div class="field">
-      <label>你的名字</label>
-      <input type="text" id="input-name" placeholder="讓大家知道是誰約的">
-    </div>
-    <div class="field">
-      <label>備註(選填)</label>
-      <input type="text" id="input-note" placeholder="例如:缺兩人 / 雙打">
-    </div>
-    <button class="btn btn-primary" id="add-btn">新增時段</button>
-    <div id="form-error"></div>
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- 提示訊息 -->
+<div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3" style="z-index:1080;">
+  <div id="toast" class="toast align-items-center text-bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toast-body"></div>
+    </div>
+  </div>
+</div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
   // ====== 設定這裡:換成你部署好的 Apps Script Web App URL ======
@@ -364,22 +135,22 @@
   const appScreen = document.getElementById('app-screen');
   const loadingScreen = document.getElementById('loading-screen');
   const logoutBtn = document.getElementById('logout-btn');
+  const fabBtn = document.getElementById('open-add-modal');
 
   // 立刻依照是否已經有存過的密碼(token),決定先顯示「自動登入中」還是登入表單
-  // 避免畫面先閃一下密碼輸入框,才切換成自動登入
   if (localStorage.getItem('bm_token')) {
-    loadingScreen.style.display = 'block';
-    loginScreen.style.display = 'none';
+    loadingScreen.classList.remove('d-none');
   } else {
-    loadingScreen.style.display = 'none';
-    loginScreen.style.display = 'block';
+    loginScreen.classList.remove('d-none');
   }
 
   // 日期 / 時間選擇套件 (flatpickr)
+  // disableMobile: true → 手機也一律用 flatpickr 自己的選擇介面,
+  // 因為輸入框是 readonly,手機瀏覽器的原生選擇器沒辦法正常跳出來
   const datePicker = flatpickr('#input-date', {
     dateFormat: 'Y-m-d',
     minDate: 'today',
-    disableMobile: false
+    disableMobile: true
   });
   const startTimePicker = flatpickr('#input-start', {
     enableTime: true,
@@ -387,7 +158,7 @@
     dateFormat: 'H:i',
     time_24hr: true,
     minuteIncrement: 15,
-    disableMobile: false
+    disableMobile: true
   });
   const endTimePicker = flatpickr('#input-end', {
     enableTime: true,
@@ -395,30 +166,20 @@
     dateFormat: 'H:i',
     time_24hr: true,
     minuteIncrement: 15,
-    disableMobile: false
+    disableMobile: true
   });
 
-  const fabBtn = document.getElementById('open-add-modal');
-  const modalOverlay = document.getElementById('add-modal-overlay');
-
-  function openAddModal() { modalOverlay.classList.add('show'); }
-  function closeAddModal() { modalOverlay.classList.remove('show'); }
-
-  fabBtn.addEventListener('click', openAddModal);
-  document.getElementById('close-add-modal').addEventListener('click', closeAddModal);
-  modalOverlay.addEventListener('click', (e) => {
-    if (e.target === modalOverlay) closeAddModal();
-  });
+  const addModalEl = document.getElementById('addModal');
+  const addModal = new bootstrap.Modal(addModalEl);
+  const toastEl = document.getElementById('toast');
 
   function getToken() { return localStorage.getItem('bm_token'); }
   function setToken(t) { localStorage.setItem('bm_token', t); }
   function clearToken() { localStorage.removeItem('bm_token'); }
 
   function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2200);
+    document.getElementById('toast-body').textContent = msg;
+    bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 2200 }).show();
   }
 
   async function callApi(action, params = {}, method = 'GET') {
@@ -435,11 +196,11 @@
   }
 
   function enterApp() {
-    loadingScreen.style.display = 'none';
-    loginScreen.style.display = 'none';
-    appScreen.style.display = 'block';
-    logoutBtn.style.display = 'inline';
-    fabBtn.style.display = 'flex';
+    loadingScreen.classList.add('d-none');
+    loginScreen.classList.add('d-none');
+    appScreen.classList.remove('d-none');
+    logoutBtn.classList.remove('d-none');
+    fabBtn.classList.remove('d-none');
     loadBookings();
   }
 
@@ -450,7 +211,6 @@
     if (!pw) { errorEl.textContent = '請輸入密碼'; return; }
 
     setToken(pw);
-    // 用 list 呼叫驗證密碼是否正確
     const result = await callApi('list');
     if (result.success) {
       enterApp();
@@ -494,7 +254,7 @@
       document.getElementById('input-note').value = '';
       startTimePicker.clear();
       endTimePicker.clear();
-      closeAddModal();
+      addModal.hide();
       loadBookings();
     } else {
       errorEl.textContent = result.error || '新增失敗';
@@ -520,13 +280,19 @@
     return { main: `${m}/${day}`, week: weekDays[d.getDay()] };
   }
 
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
   async function loadBookings() {
     const listEl = document.getElementById('bookings-list');
-    listEl.innerHTML = '<div class="empty-state">載入中…</div>';
+    listEl.innerHTML = '<div class="text-center text-muted py-4 small">載入中…</div>';
 
     const result = await callApi('list');
     if (!result.success) {
-      listEl.innerHTML = `<div class="empty-state">載入失敗:${result.error || '未知錯誤'}</div>`;
+      listEl.innerHTML = `<div class="text-center text-muted py-4 small">載入失敗:${result.error || '未知錯誤'}</div>`;
       return;
     }
 
@@ -535,7 +301,7 @@
     const upcoming = bookings.filter(b => b.date >= today);
 
     if (upcoming.length === 0) {
-      listEl.innerHTML = `<div class="empty-state"><span class="shuttle-icon">🏸</span>目前還沒有預約,新增第一個時段吧</div>`;
+      listEl.innerHTML = `<div class="text-center text-muted py-5"><div class="fs-2 mb-2">🏸</div>目前還沒有預約,新增第一個時段吧</div>`;
       return;
     }
 
@@ -549,32 +315,26 @@
     listEl.innerHTML = dates.map(date => {
       const label = formatDateLabel(date);
       const slots = grouped[date].map(b => `
-        <div class="slot">
-          <div>
-            <div class="time">${b.startTime} - ${b.endTime}</div>
-            <div class="meta">${escapeHtml(b.location)} · ${escapeHtml(b.name)}${b.note ? ' · ' + escapeHtml(b.note) : ''}</div>
-          </div>
-          <div class="right">
-            <button class="btn btn-danger" onclick="deleteBooking('${b.id}')">刪除</button>
+        <div class="card mb-2 slot-card border-start border-warning">
+          <div class="card-body d-flex justify-content-between align-items-center py-2 px-3">
+            <div>
+              <div class="fw-bold">${b.startTime} - ${b.endTime}</div>
+              <div class="small text-muted">${escapeHtml(b.location)} · ${escapeHtml(b.name)}${b.note ? ' · ' + escapeHtml(b.note) : ''}</div>
+            </div>
+            <button class="btn btn-outline-danger btn-sm" onclick="deleteBooking('${b.id}')">刪除</button>
           </div>
         </div>
       `).join('');
       return `
-        <div class="day-group">
-          <div class="day-label">
-            <span class="date-main">${label.main}</span>
-            <span class="date-week">${label.week}</span>
+        <div class="mb-3">
+          <div class="d-flex align-items-baseline gap-2 mb-2">
+            <span class="fw-bold">${label.main}</span>
+            <span class="small text-muted">${label.week}</span>
           </div>
           ${slots}
         </div>
       `;
     }).join('');
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
   }
 
   // 自動登入(如果之前已經輸入過密碼)
@@ -586,8 +346,8 @@
         return;
       }
       clearToken();
-      loadingScreen.style.display = 'none';
-      loginScreen.style.display = 'block';
+      loadingScreen.classList.add('d-none');
+      loginScreen.classList.remove('d-none');
     }
   })();
 </script>
