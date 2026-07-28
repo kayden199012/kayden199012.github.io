@@ -76,7 +76,7 @@
   <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">新增預約</h5>
+        <h5 class="modal-title" id="modal-title">新增預約</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -173,6 +173,25 @@
   const addModal = new bootstrap.Modal(addModalEl);
   const toastEl = document.getElementById('toast');
 
+  let editingId = null;   // 目前正在編輯的預約 id,null 表示是「新增」模式
+  let allBookings = [];   // 最近一次讀到的預約列表,編輯時用來帶入原本的值
+
+  function resetModalToAddMode() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = '新增預約';
+    document.getElementById('add-btn').textContent = '新增時段';
+    document.getElementById('form-error').textContent = '';
+    document.getElementById('input-location').value = '';
+    document.getElementById('input-name').value = '';
+    document.getElementById('input-note').value = '';
+    datePicker.clear();
+    startTimePicker.clear();
+    endTimePicker.clear();
+  }
+
+  // 按浮動按鈕新增時,先重設成「新增」模式,避免殘留上次編輯的資料
+  fabBtn.addEventListener('click', resetModalToAddMode);
+
   function getToken() { return localStorage.getItem('bm_token'); }
   function setToken(t) { localStorage.setItem('bm_token', t); }
   function clearToken() { localStorage.removeItem('bm_token'); }
@@ -244,22 +263,40 @@
       return;
     }
 
-    const result = await callApi('add', {
-      date, location, startTime: start, endTime: end, name, note
-    }, 'POST');
+    const result = editingId
+      ? await callApi('update', {
+          id: editingId, date, location, startTime: start, endTime: end, name, note
+        }, 'POST')
+      : await callApi('add', {
+          date, location, startTime: start, endTime: end, name, note
+        }, 'POST');
 
     if (result.success) {
-      showToast('新增成功!');
-      document.getElementById('input-location').value = '';
-      document.getElementById('input-note').value = '';
-      startTimePicker.clear();
-      endTimePicker.clear();
+      showToast(editingId ? '已儲存修改!' : '新增成功!');
+      resetModalToAddMode();
       addModal.hide();
       loadBookings();
     } else {
-      errorEl.textContent = result.error || '新增失敗';
+      errorEl.textContent = result.error || '操作失敗';
     }
   });
+
+  function editBooking(id) {
+    const booking = allBookings.find(b => b.id === id);
+    if (!booking) return;
+
+    editingId = id;
+    document.getElementById('modal-title').textContent = '編輯預約';
+    document.getElementById('add-btn').textContent = '儲存修改';
+    document.getElementById('form-error').textContent = '';
+    datePicker.setDate(booking.date, true);
+    startTimePicker.setDate(booking.startTime, true);
+    endTimePicker.setDate(booking.endTime, true);
+    document.getElementById('input-location').value = booking.location;
+    document.getElementById('input-name').value = booking.name;
+    document.getElementById('input-note').value = booking.note || '';
+    addModal.show();
+  }
 
   async function deleteBooking(id) {
     if (!confirm('確定要刪除這個時段嗎?')) return;
@@ -297,6 +334,7 @@
     }
 
     const bookings = result.data || [];
+    allBookings = bookings;
     const today = new Date().toISOString().slice(0, 10);
     const upcoming = bookings.filter(b => b.date >= today);
 
@@ -321,7 +359,10 @@
               <div class="fw-bold">${b.startTime} - ${b.endTime}</div>
               <div class="small text-muted">${escapeHtml(b.location)} · ${escapeHtml(b.name)}${b.note ? ' · ' + escapeHtml(b.note) : ''}</div>
             </div>
-            <button class="btn btn-outline-danger btn-sm" onclick="deleteBooking('${b.id}')">刪除</button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-secondary btn-sm" onclick="editBooking('${b.id}')">編輯</button>
+              <button class="btn btn-outline-danger btn-sm" onclick="deleteBooking('${b.id}')">刪除</button>
+            </div>
           </div>
         </div>
       `).join('');
