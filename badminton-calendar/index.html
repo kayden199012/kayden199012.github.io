@@ -61,7 +61,10 @@
 
   <!-- 主畫面 -->
   <div id="app-screen" class="d-none">
-    <h6 class="text-uppercase text-muted fw-bold mt-2 mb-2" style="letter-spacing:1px;">已預約時段</h6>
+    <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+      <h6 class="text-uppercase text-muted fw-bold mb-0" style="letter-spacing:1px;">已預約時段</h6>
+      <button class="btn btn-outline-secondary btn-sm" id="refresh-btn">↻ 重新整理</button>
+    </div>
     <div id="bookings-list"></div>
   </div>
 
@@ -319,6 +322,13 @@
     document.getElementById('input-note').value = booking.note || '';
     addModal.show();
   }
+
+  document.getElementById('refresh-btn').addEventListener('click', async () => {
+    const refreshBtn = document.getElementById('refresh-btn');
+    setButtonLoading(refreshBtn, '重新整理中…');
+    await loadBookings();
+    clearButtonLoading(refreshBtn, '↻ 重新整理');
+  });
 
   async function deleteBooking(id) {
     if (!confirm('確定要刪除這個時段嗎?')) return;
