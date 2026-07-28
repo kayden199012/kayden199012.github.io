@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>羽球場地預約</title>
+<style>
+  :root {
+    --court-green: #1f6f4a;
+    --court-green-dark: #14503468;
+    --line-white: #f7f5ef;
+    --shuttle: #e8b400;
+    --ink: #1c231f;
+    --ink-soft: #5c675f;
+    --danger: #c1443a;
+    --card-bg: #ffffff;
+    --bg: #eef2ec;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+  .top-bar {
+    background: var(--court-green);
+    color: var(--line-white);
+    padding: 22px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .top-bar::after {
+    content: "";
+    position: absolute;
+    right: -30px; top: -30px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+  }
+  .top-bar h1 {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .top-bar .court-lines {
+    font-size: 13px;
+    opacity: 0.85;
+    margin-top: 4px;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  /* Login */
+  #login-screen {
+    max-width: 360px;
+    margin: 60px auto;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    box-shadow: 0 8px 24px rgba(20,40,30,0.08);
+    text-align: center;
+  }
+  #login-screen .shuttle-icon { font-size: 34px; }
+  #login-screen h2 { margin: 10px 0 4px; font-size: 18px; }
+  #login-screen p { color: var(--ink-soft); font-size: 13px; margin-bottom: 18px; }
+  input[type="password"], input[type="text"], input[type="date"], input[type="time"] {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #d8ddd6;
+    border-radius: 9px;
+    font-size: 15px;
+    background: #fbfbf9;
+    color: var(--ink);
+  }
+  input:focus { outline: 2px solid var(--court-green); outline-offset: 1px; }
+  .btn {
+    display: inline-block;
+    border: none;
+    border-radius: 9px;
+    padding: 11px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.05s ease;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--court-green); color: white; width: 100%; }
+  .btn-danger { background: transparent; color: var(--danger); border: 1px solid #f0d3d0; padding: 6px 10px; font-size: 13px; }
+  #login-error, #form-error { color: var(--danger); font-size: 13px; margin-top: 10px; min-height: 16px; }
+
+  /* App */
+  #app-screen { display: none; }
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink-soft);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 26px 0 10px;
+  }
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: 0 2px 10px rgba(20,40,30,0.05);
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 5px; }
+
+  .day-group { margin-bottom: 18px; }
+  .day-label {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+  .day-label .date-main { font-size: 16px; font-weight: 700; }
+  .day-label .date-week { font-size: 12px; color: var(--ink-soft); }
+
+  .slot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--card-bg);
+    box-shadow: 0 1px 6px rgba(20,40,30,0.05);
+    margin-bottom: 8px;
+    border-left: 4px solid var(--shuttle);
+  }
+  .slot .time { font-weight: 700; font-size: 15px; }
+  .slot .meta { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+  .slot .right { display: flex; align-items: center; gap: 10px; }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+  .empty-state .shuttle-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+
+  #toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink);
+    color: white;
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  #toast.show { opacity: 1; }
+
+  .logout-link {
+    color: rgba(255,255,255,0.85);
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+    position: absolute;
+    right: 20px;
+    top: 26px;
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1><span>🏸</span> 羽球場地預約</h1>
+  <div class="court-lines">大家一起約時間,不用再截圖對時段</div>
+  <span class="logout-link" id="logout-btn" style="display:none;">登出</span>
+</div>
+
+<div class="wrap">
+
+  <!-- 登入畫面 -->
+  <div id="login-screen">
+    <div class="shuttle-icon">🏸</div>
+    <h2>輸入通關密碼</h2>
+    <p>這是我們球友之間共用的密碼,不要外流喔</p>
+    <input type="password" id="password-input" placeholder="密碼" autocomplete="current-password">
+    <div style="height:10px"></div>
+    <button class="btn btn-primary" id="login-btn">進入</button>
+    <div id="login-error"></div>
+  </div>
+
+  <!-- 主畫面 -->
+  <div id="app-screen">
+
+    <div class="section-title">新增預約</div>
+    <div class="card">
+      <div class="grid-2">
+        <div class="field">
+          <label>日期</label>
+          <input type="date" id="input-date">
+        </div>
+        <div class="field">
+          <label>場地 / 地點</label>
+          <input type="text" id="input-location" placeholder="例如:XX 羽球館 3 號場">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>開始時間</label>
+          <input type="time" id="input-start">
+        </div>
+        <div class="field">
+          <label>結束時間</label>
+          <input type="time" id="input-end">
+        </div>
+      </div>
+      <div class="field">
+        <label>你的名字</label>
+        <input type="text" id="input-name" placeholder="讓大家知道是誰約的">
+      </div>
+      <div class="field">
+        <label>備註(選填)</label>
+        <input type="text" id="input-note" placeholder="例如:缺兩人 / 雙打">
+      </div>
+      <button class="btn btn-primary" id="add-btn">新增時段</button>
+      <div id="form-error"></div>
+    </div>
+
+    <div class="section-title">已預約時段</div>
+    <div id="bookings-list"></div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ====== 設定這裡:換成你部署好的 Apps Script Web App URL ======
+  const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+  // ==============================================================
+
+  const loginScreen = document.getElementById('login-screen');
+  const appScreen = document.getElementById('app-screen');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  function getToken() { return localStorage.getItem('bm_token'); }
+  function setToken(t) { localStorage.setItem('bm_token', t); }
+  function clearToken() { localStorage.removeItem('bm_token'); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  async function callApi(action, params = {}, method = 'GET') {
+    const token = getToken();
+    if (method === 'GET') {
+      const query = new URLSearchParams({ action, token, ...params });
+      const res = await fetch(`${API_URL}?${query.toString()}`);
+      return res.json();
+    } else {
+      const body = new URLSearchParams({ action, token, ...params });
+      const res = await fetch(API_URL, { method: 'POST', body });
+      return res.json();
+    }
+  }
+
+  function enterApp() {
+    loginScreen.style.display = 'none';
+    appScreen.style.display = 'block';
+    logoutBtn.style.display = 'inline';
+    loadBookings();
+  }
+
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    const pw = document.getElementById('password-input').value.trim();
+    const errorEl = document.getElementById('login-error');
+    errorEl.textContent = '';
+    if (!pw) { errorEl.textContent = '請輸入密碼'; return; }
+
+    setToken(pw);
+    // 用 list 呼叫驗證密碼是否正確
+    const result = await callApi('list');
+    if (result.success) {
+      enterApp();
+    } else {
+      clearToken();
+      errorEl.textContent = '密碼錯誤,請再試一次';
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    clearToken();
+    location.reload();
+  });
+
+  document.getElementById('add-btn').addEventListener('click', async () => {
+    const date = document.getElementById('input-date').value;
+    const location = document.getElementById('input-location').value.trim();
+    const start = document.getElementById('input-start').value;
+    const end = document.getElementById('input-end').value;
+    const name = document.getElementById('input-name').value.trim();
+    const note = document.getElementById('input-note').value.trim();
+    const errorEl = document.getElementById('form-error');
+    errorEl.textContent = '';
+
+    if (!date || !location || !start || !end || !name) {
+      errorEl.textContent = '請填寫日期、場地、時間與名字';
+      return;
+    }
+    if (end <= start) {
+      errorEl.textContent = '結束時間必須晚於開始時間';
+      return;
+    }
+
+    const result = await callApi('add', {
+      date, location, startTime: start, endTime: end, name, note
+    }, 'POST');
+
+    if (result.success) {
+      showToast('新增成功!');
+      document.getElementById('input-location').value = '';
+      document.getElementById('input-start').value = '';
+      document.getElementById('input-end').value = '';
+      document.getElementById('input-note').value = '';
+      loadBookings();
+    } else {
+      errorEl.textContent = result.error || '新增失敗';
+    }
+  });
+
+  async function deleteBooking(id) {
+    if (!confirm('確定要刪除這個時段嗎?')) return;
+    const result = await callApi('delete', { id }, 'POST');
+    if (result.success) {
+      showToast('已刪除');
+      loadBookings();
+    } else {
+      showToast(result.error || '刪除失敗');
+    }
+  }
+
+  function formatDateLabel(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    const weekDays = ['週日','週一','週二','週三','週四','週五','週六'];
+    const m = d.getMonth() + 1;
+    const day = d.getDate();
+    return { main: `${m}/${day}`, week: weekDays[d.getDay()] };
+  }
+
+  async function loadBookings() {
+    const listEl = document.getElementById('bookings-list');
+    listEl.innerHTML = '<div class="empty-state">載入中…</div>';
+
+    const result = await callApi('list');
+    if (!result.success) {
+      listEl.innerHTML = `<div class="empty-state">載入失敗:${result.error || '未知錯誤'}</div>`;
+      return;
+    }
+
+    const bookings = result.data || [];
+    const today = new Date().toISOString().slice(0, 10);
+    const upcoming = bookings.filter(b => b.date >= today);
+
+    if (upcoming.length === 0) {
+      listEl.innerHTML = `<div class="empty-state"><span class="shuttle-icon">🏸</span>目前還沒有預約,新增第一個時段吧</div>`;
+      return;
+    }
+
+    const grouped = {};
+    upcoming.forEach(b => {
+      if (!grouped[b.date]) grouped[b.date] = [];
+      grouped[b.date].push(b);
+    });
+
+    const dates = Object.keys(grouped).sort();
+    listEl.innerHTML = dates.map(date => {
+      const label = formatDateLabel(date);
+      const slots = grouped[date].map(b => `
+        <div class="slot">
+          <div>
+            <div class="time">${b.startTime} - ${b.endTime}</div>
+            <div class="meta">${escapeHtml(b.location)} · ${escapeHtml(b.name)}${b.note ? ' · ' + escapeHtml(b.note) : ''}</div>
+          </div>
+          <div class="right">
+            <button class="btn btn-danger" onclick="deleteBooking('${b.id}')">刪除</button>
+          </div>
+        </div>
+      `).join('');
+      return `
+        <div class="day-group">
+          <div class="day-label">
+            <span class="date-main">${label.main}</span>
+            <span class="date-week">${label.week}</span>
+          </div>
+          ${slots}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // 自動登入(如果之前已經輸入過密碼)
+  (async function init() {
+    if (getToken()) {
+      const result = await callApi('list');
+      if (result.success) {
+        enterApp();
+        return;
+      }
+      clearToken();
+    }
+  })();
+</script>
+
+</body>
+</html>
