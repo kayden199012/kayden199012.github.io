@@ -62,6 +62,7 @@
 
   /* Login */
   #login-screen {
+    display: none;
     max-width: 360px;
     margin: 60px auto;
     background: var(--card-bg);
@@ -73,6 +74,27 @@
   #login-screen .shuttle-icon { font-size: 34px; }
   #login-screen h2 { margin: 10px 0 4px; font-size: 18px; }
   #login-screen p { color: var(--ink-soft); font-size: 13px; margin-bottom: 18px; }
+
+  /* 自動登入中的載入畫面 */
+  #loading-screen {
+    display: none;
+    max-width: 360px;
+    margin: 60px auto;
+    text-align: center;
+    padding: 28px 24px;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+  .spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #d8ddd6;
+    border-top-color: var(--court-green);
+    border-radius: 50%;
+    margin: 0 auto 14px;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
   input[type="password"], input[type="text"], input[type="date"], input[type="time"] {
     width: 100%;
     padding: 11px 12px;
@@ -264,6 +286,12 @@
 
 <div class="wrap">
 
+  <!-- 自動登入中 -->
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    正在自動登入…
+  </div>
+
   <!-- 登入畫面 -->
   <div id="login-screen">
     <div class="shuttle-icon">🏸</div>
@@ -334,7 +362,18 @@
 
   const loginScreen = document.getElementById('login-screen');
   const appScreen = document.getElementById('app-screen');
+  const loadingScreen = document.getElementById('loading-screen');
   const logoutBtn = document.getElementById('logout-btn');
+
+  // 立刻依照是否已經有存過的密碼(token),決定先顯示「自動登入中」還是登入表單
+  // 避免畫面先閃一下密碼輸入框,才切換成自動登入
+  if (localStorage.getItem('bm_token')) {
+    loadingScreen.style.display = 'block';
+    loginScreen.style.display = 'none';
+  } else {
+    loadingScreen.style.display = 'none';
+    loginScreen.style.display = 'block';
+  }
 
   // 日期 / 時間選擇套件 (flatpickr)
   const datePicker = flatpickr('#input-date', {
@@ -396,6 +435,7 @@
   }
 
   function enterApp() {
+    loadingScreen.style.display = 'none';
     loginScreen.style.display = 'none';
     appScreen.style.display = 'block';
     logoutBtn.style.display = 'inline';
@@ -546,6 +586,8 @@
         return;
       }
       clearToken();
+      loadingScreen.style.display = 'none';
+      loginScreen.style.display = 'block';
     }
   })();
 </script>
