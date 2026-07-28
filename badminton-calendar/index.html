@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>羽球場地預約</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
   :root {
     --court-green: #1f6f4a;
@@ -175,6 +176,82 @@
     right: 20px;
     top: 26px;
   }
+
+  /* 浮動新增按鈕 */
+  .fab {
+    position: fixed;
+    right: 20px;
+    bottom: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--court-green);
+    color: white;
+    font-size: 28px;
+    line-height: 1;
+    border: none;
+    box-shadow: 0 8px 20px rgba(20,60,40,0.3);
+    cursor: pointer;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .fab:active { transform: scale(0.95); }
+
+  /* 新增預約彈跳視窗 */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,25,20,0.5);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 100;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-sheet {
+    background: var(--card-bg);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 20px 20px 0 0;
+    padding: 22px 20px calc(20px + env(safe-area-inset-bottom));
+    max-height: 88vh;
+    overflow-y: auto;
+    animation: sheetUp 0.22s ease;
+  }
+  @keyframes sheetUp {
+    from { transform: translateY(24px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @media (min-width: 600px) {
+    .modal-overlay { align-items: center; }
+    .modal-sheet { border-radius: var(--radius); }
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .modal-header h3 { margin: 0; font-size: 17px; }
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 4px 8px;
+  }
+
+  /* flatpickr 微調,配合整體配色 */
+  .flatpickr-day.selected, .flatpickr-day.selected:hover {
+    background: var(--court-green);
+    border-color: var(--court-green);
+  }
+  .flatpickr-time input:focus, .flatpickr-time .flatpickr-am-pm:focus {
+    outline: 2px solid var(--court-green);
+  }
 </style>
 </head>
 <body>
@@ -200,49 +277,56 @@
 
   <!-- 主畫面 -->
   <div id="app-screen">
-
-    <div class="section-title">新增預約</div>
-    <div class="card">
-      <div class="grid-2">
-        <div class="field">
-          <label>日期</label>
-          <input type="date" id="input-date">
-        </div>
-        <div class="field">
-          <label>場地 / 地點</label>
-          <input type="text" id="input-location" placeholder="例如:XX 羽球館 3 號場">
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="field">
-          <label>開始時間</label>
-          <input type="time" id="input-start">
-        </div>
-        <div class="field">
-          <label>結束時間</label>
-          <input type="time" id="input-end">
-        </div>
-      </div>
-      <div class="field">
-        <label>你的名字</label>
-        <input type="text" id="input-name" placeholder="讓大家知道是誰約的">
-      </div>
-      <div class="field">
-        <label>備註(選填)</label>
-        <input type="text" id="input-note" placeholder="例如:缺兩人 / 雙打">
-      </div>
-      <button class="btn btn-primary" id="add-btn">新增時段</button>
-      <div id="form-error"></div>
-    </div>
-
     <div class="section-title">已預約時段</div>
     <div id="bookings-list"></div>
+  </div>
+</div>
 
+<!-- 浮動新增按鈕 -->
+<button class="fab" id="open-add-modal">＋</button>
+
+<!-- 新增預約彈跳視窗 -->
+<div class="modal-overlay" id="add-modal-overlay">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <h3>新增預約</h3>
+      <button class="modal-close" id="close-add-modal">✕</button>
+    </div>
+
+    <div class="field">
+      <label>日期</label>
+      <input type="text" id="input-date" placeholder="選擇日期" readonly>
+    </div>
+    <div class="grid-2">
+      <div class="field">
+        <label>開始時間</label>
+        <input type="text" id="input-start" placeholder="選擇時間" readonly>
+      </div>
+      <div class="field">
+        <label>結束時間</label>
+        <input type="text" id="input-end" placeholder="選擇時間" readonly>
+      </div>
+    </div>
+    <div class="field">
+      <label>場地 / 地點</label>
+      <input type="text" id="input-location" placeholder="例如:XX 羽球館 3 號場">
+    </div>
+    <div class="field">
+      <label>你的名字</label>
+      <input type="text" id="input-name" placeholder="讓大家知道是誰約的">
+    </div>
+    <div class="field">
+      <label>備註(選填)</label>
+      <input type="text" id="input-note" placeholder="例如:缺兩人 / 雙打">
+    </div>
+    <button class="btn btn-primary" id="add-btn">新增時段</button>
+    <div id="form-error"></div>
   </div>
 </div>
 
 <div id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
   // ====== 設定這裡:換成你部署好的 Apps Script Web App URL ======
   const API_URL = 'https://script.google.com/macros/s/AKfycbwoVVGjyaoLVzCrpGVNsw3tDPm4xQ7Rw2-WmOJGGplxIqfLLVv8eN9i1QncsyBG3pm0/exec';
@@ -251,6 +335,41 @@
   const loginScreen = document.getElementById('login-screen');
   const appScreen = document.getElementById('app-screen');
   const logoutBtn = document.getElementById('logout-btn');
+
+  // 日期 / 時間選擇套件 (flatpickr)
+  const datePicker = flatpickr('#input-date', {
+    dateFormat: 'Y-m-d',
+    minDate: 'today',
+    disableMobile: false
+  });
+  const startTimePicker = flatpickr('#input-start', {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: 'H:i',
+    time_24hr: true,
+    minuteIncrement: 15,
+    disableMobile: false
+  });
+  const endTimePicker = flatpickr('#input-end', {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: 'H:i',
+    time_24hr: true,
+    minuteIncrement: 15,
+    disableMobile: false
+  });
+
+  const fabBtn = document.getElementById('open-add-modal');
+  const modalOverlay = document.getElementById('add-modal-overlay');
+
+  function openAddModal() { modalOverlay.classList.add('show'); }
+  function closeAddModal() { modalOverlay.classList.remove('show'); }
+
+  fabBtn.addEventListener('click', openAddModal);
+  document.getElementById('close-add-modal').addEventListener('click', closeAddModal);
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeAddModal();
+  });
 
   function getToken() { return localStorage.getItem('bm_token'); }
   function setToken(t) { localStorage.setItem('bm_token', t); }
@@ -280,6 +399,7 @@
     loginScreen.style.display = 'none';
     appScreen.style.display = 'block';
     logoutBtn.style.display = 'inline';
+    fabBtn.style.display = 'flex';
     loadBookings();
   }
 
@@ -331,9 +451,10 @@
     if (result.success) {
       showToast('新增成功!');
       document.getElementById('input-location').value = '';
-      document.getElementById('input-start').value = '';
-      document.getElementById('input-end').value = '';
       document.getElementById('input-note').value = '';
+      startTimePicker.clear();
+      endTimePicker.clear();
+      closeAddModal();
       loadBookings();
     } else {
       errorEl.textContent = result.error || '新增失敗';
