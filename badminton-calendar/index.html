@@ -196,6 +196,19 @@
   function setToken(t) { localStorage.setItem('bm_token', t); }
   function clearToken() { localStorage.removeItem('bm_token'); }
 
+  // 讓按鈕在等待 Apps Script 回應時顯示轉圈 + 文字,並暫時擋掉重複點擊
+  function setButtonLoading(btnEl, loadingText) {
+    if (!btnEl.dataset.originalText) {
+      btnEl.dataset.originalText = btnEl.textContent;
+    }
+    btnEl.disabled = true;
+    btnEl.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>${loadingText}`;
+  }
+  function clearButtonLoading(btnEl, overrideText) {
+    btnEl.disabled = false;
+    btnEl.textContent = overrideText || btnEl.dataset.originalText || btnEl.textContent;
+  }
+
   function showToast(msg) {
     document.getElementById('toast-body').textContent = msg;
     bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 2200 }).show();
@@ -224,13 +237,17 @@
   }
 
   document.getElementById('login-btn').addEventListener('click', async () => {
+    const loginBtn = document.getElementById('login-btn');
     const pw = document.getElementById('password-input').value.trim();
     const errorEl = document.getElementById('login-error');
     errorEl.textContent = '';
     if (!pw) { errorEl.textContent = '請輸入密碼'; return; }
 
     setToken(pw);
+    setButtonLoading(loginBtn, '登入中…');
     const result = await callApi('list');
+    clearButtonLoading(loginBtn);
+
     if (result.success) {
       enterApp();
     } else {
@@ -245,6 +262,7 @@
   });
 
   document.getElementById('add-btn').addEventListener('click', async () => {
+    const saveBtn = document.getElementById('add-btn');
     const date = document.getElementById('input-date').value;
     const location = document.getElementById('input-location').value.trim();
     const start = document.getElementById('input-start').value;
@@ -263,6 +281,8 @@
       return;
     }
 
+    setButtonLoading(saveBtn, editingId ? '儲存中…' : '新增中…');
+
     const result = editingId
       ? await callApi('update', {
           id: editingId, date, location, startTime: start, endTime: end, name, note
@@ -274,9 +294,11 @@
     if (result.success) {
       showToast(editingId ? '已儲存修改!' : '新增成功!');
       resetModalToAddMode();
+      clearButtonLoading(saveBtn, '新增時段');
       addModal.hide();
       loadBookings();
     } else {
+      clearButtonLoading(saveBtn, editingId ? '儲存修改' : '新增時段');
       errorEl.textContent = result.error || '操作失敗';
     }
   });
