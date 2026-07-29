@@ -355,6 +355,16 @@
     return div.innerHTML;
   }
 
+  // 用「本地時區」算出今天的日期字串,避免 toISOString() 抓到 UTC 日期
+  // (台灣是 UTC+8,半夜 0:00~8:00 之間 UTC 那邊其實還算前一天,會導致日期判斷錯一天)
+  function getLocalTodayStr() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   async function loadBookings() {
     const listEl = document.getElementById('bookings-list');
     listEl.innerHTML = '<div class="text-center text-muted py-4 small">載入中…</div>';
@@ -367,7 +377,7 @@
 
     const bookings = result.data || [];
     allBookings = bookings;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalTodayStr();
     const upcoming = bookings.filter(b => b.date >= today);
 
     if (upcoming.length === 0) {
