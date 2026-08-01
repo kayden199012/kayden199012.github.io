@@ -429,6 +429,7 @@ var AccountSharing = /*#__PURE__*/function () {
       options: {
         sharing: ["家庭人數", "家庭"]
       },
+      settled: false,
       html: {
         member: "<div class=\"group card py-2 px-3 bg-light d-flex flex-row justify-content-between align-items-center gap-3 animate__animated animate__fadeIn\"><p class=\"m-0\">{{title}}<span class=\"d-block fs-small text-secondary\">\u5206\u5E33\u4EBA\u6578\uFF1A{{qty}} \u4EBA</span></p><button type=\"button\" class=\"delete btn btn-sm btn-danger\" data-idx=\"{{idx}}\"><i class=\"bi bi-trash-fill\"></i></button></div>",
         purchase: "<div class=\"group card py-2 px-3 bg-light d-flex flex-row justify-content-between align-items-center gap-3 animate__animated animate__fadeIn\"><p class=\"m-0\">{{title}}<span class=\"d-block fs-small text-secondary\">\u4ED8\u8CBB\u5BB6\u5EAD/\u6210\u54E1\uFF1A{{member}}\uFF5C\u8CBB\u7528\uFF1A{{price}}\uFF5C\u5206\u5E33\u65B9\u5F0F\uFF1A{{sharing}}</span></p><button type=\"button\" class=\"delete btn btn-sm btn-danger\" data-idx=\"{{idx}}\"><i class=\"bi bi-trash-fill\"></i></button></div>",
@@ -450,8 +451,13 @@ var AccountSharing = /*#__PURE__*/function () {
           _this4.updatePurchaseMemberOptions();
           _this4.updateMemberCost();
           _this4.updateTotal();
+          _this4.settled = false;
+          $('#settle-hint').hide();
         }
       });
+    });
+    $('#settle-now').on('click', function () {
+      _this4.settleNow();
     });
   }
   _createClass(AccountSharing, [{
@@ -478,6 +484,9 @@ var AccountSharing = /*#__PURE__*/function () {
       this.updatePurchaseMemberOptions();
       this.updateMemberCost();
       this.updateTotal();
+      if (this.settled) {
+        this.settleNow();
+      }
     }
   }, {
     key: "memberController",
@@ -503,7 +512,9 @@ var AccountSharing = /*#__PURE__*/function () {
             }
           });
         }
-        var idx = $this.members.length;
+        var idx = $this.members.reduce(function (max, e) {
+          return Math.max(max, e.idx);
+        }, -1) + 1;
         var html = $this.html.member.replace(/{{title}}/g, val.member_title).replace(/{{qty}}/g, val.member_qty).replace(/{{idx}}/g, idx);
         $('#member-list .empty').hide();
         $('#member-list').append(html);
@@ -517,6 +528,7 @@ var AccountSharing = /*#__PURE__*/function () {
         // 更新選單
         $this.updatePurchaseMemberOptions();
         $this.updateMemberCost();
+        $this.markDirty();
       });
       // 刪除
       $(document).on("click", "#member-list .group .delete", function () {
@@ -541,6 +553,7 @@ var AccountSharing = /*#__PURE__*/function () {
             $this.cleanPurchase(idx);
             // 計算消費
             $this.updateMemberCost();
+            $this.markDirty();
           }
         });
       });
@@ -577,7 +590,9 @@ var AccountSharing = /*#__PURE__*/function () {
             }
           });
         }
-        var idx = $this.purchase.length;
+        var idx = $this.purchase.reduce(function (max, e) {
+          return Math.max(max, e.idx);
+        }, -1) + 1;
         var member_name = $this.getMemberName(val.purchase_member);
         var html = $this.html.purchase.replace(/{{title}}/g, val.purchase_title).replace(/{{price}}/g, val.purchase_price).replace(/{{member}}/g, member_name).replace(/{{sharing}}/g, $this.options.sharing[val.purchase_sharing]).replace(/{{idx}}/g, idx);
         $('#purchase-list .empty').hide();
@@ -592,6 +607,7 @@ var AccountSharing = /*#__PURE__*/function () {
         $('#purchase-title, #purchase-price, #purchase-member, #purchase-sharing').val('');
         $this.updateMemberCost();
         $this.updateTotal();
+        $this.markDirty();
       });
       // 刪除
       $(document).on("click", "#purchase-list .group .delete", function () {
@@ -613,6 +629,7 @@ var AccountSharing = /*#__PURE__*/function () {
             $this.updatePurchaseMemberOptions();
             $this.updateMemberCost();
             $this.updateTotal();
+            $this.markDirty();
           }
         });
       });
@@ -658,23 +675,51 @@ var AccountSharing = /*#__PURE__*/function () {
       this.updateTotal();
     }
   }, {
+    key: "markDirty",
+    value: function markDirty() {
+      if (this.settled) {
+        $('#settle-hint').show();
+      }
+      this.settled = false;
+    }
+  }, {
     key: "updateMemberCost",
     value: function updateMemberCost() {
       var _this9 = this;
-      var member_qty_total = 0;
       $('.member-cost').html('');
       if (this.members.length > 0) {
         var member = "";
         this.members.forEach(function (e, idx) {
           member += "<h6 class=\"mb-2\">" + e.title + "\uFF1A<span id=\"cost-" + e.idx + "\">0</span></h6>";
           _this9.members[idx].cost = 0;
-          _this9.members[idx].pay = 0;
-          member_qty_total += parseInt(e.qty);
         });
         $('.member-cost').html(member);
       }
+      this.purchase.forEach(function (e) {
+        _this9.members.forEach(function (m_e, idx) {
+          if (m_e.idx == e.member) {
+            _this9.members[idx].cost += Number(e.price);
+          }
+        });
+      });
+      this.members.forEach(function (e) {
+        $("#cost-" + e.idx).text(e.cost);
+      });
+
+      // 儲存備份
+      localStorage.setItem("memory", JSON.stringify(this));
+    }
+  }, {
+    key: "settleNow",
+    value: function settleNow() {
+      var _this9 = this;
+      var member_qty_total = 0;
       var total_0 = 0; // 家庭人數總額
       var total_1 = 0; // 家庭總額
+      this.members.forEach(function (e) {
+        member_qty_total += parseInt(e.qty);
+        e.pay = 0;
+      });
       this.purchase.forEach(function (e) {
         switch (e.sharing) {
           case 0:
@@ -686,17 +731,10 @@ var AccountSharing = /*#__PURE__*/function () {
             total_1 += Number(e.price);
             break;
         }
-        _this9.members.forEach(function (m_e, idx) {
-          if (m_e.idx == e.member) {
-            _this9.members[idx].cost += Number(e.price);
-          }
-        });
       });
       this.members.forEach(function (e, idx) {
-        $("#cost-" + e.idx).text(e.cost);
         _this9.members[idx].pay += total_0 / member_qty_total * e.qty + total_1 / _this9.members.length - e.cost;
       });
-      var n = 0;
       var pay_history = [];
       for (var _n in this.members) {
         if (this.members[_n].pay < 0) {
@@ -736,6 +774,8 @@ var AccountSharing = /*#__PURE__*/function () {
       } else {
         $("#sharing-result .empty").show().siblings('.group').remove();
       }
+      this.settled = true;
+      $('#settle-hint').hide();
 
       // 儲存備份
       localStorage.setItem("memory", JSON.stringify(this));
