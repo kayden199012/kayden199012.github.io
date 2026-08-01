@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>羽球場地預約</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+  body { background: #f4f6f8; }
+  .app-wrap { max-width: 640px; margin: 0 auto; }
+  .top-bar { position: relative; }
+  .top-bar .logout-link { position: absolute; right: 16px; top: 18px; }
+  .slot-card { border-left-width: 4px !important; }
+  #loading-screen, #login-screen { max-width: 360px; }
+  .fab {
+    width: 56px;
+    height: 56px;
+    right: 20px;
+    bottom: 24px;
+    font-size: 28px;
+    line-height: 1;
+    z-index: 1030;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  }
+  .flatpickr-day.selected, .flatpickr-day.selected:hover {
+    background: var(--bs-primary);
+    border-color: var(--bs-primary);
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar bg-primary text-white py-4 px-3">
+  <div class="app-wrap">
+    <h1 class="h4 mb-1">🏸 羽球場地預約</h1>
+    <div class="small text-white-50">大家一起約時間,不用再截圖對時段</div>
+  </div>
+  <span class="logout-link small text-white-50 text-decoration-underline d-none" id="logout-btn" role="button">登出</span>
+</div>
+
+<div class="app-wrap p-3 pb-5">
+
+  <!-- 自動登入中 -->
+  <div id="loading-screen" class="text-center py-5 mx-auto d-none">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-3 text-muted small mb-0">正在自動登入…</p>
+  </div>
+
+  <!-- 登入畫面 -->
+  <div id="login-screen" class="card mx-auto mt-5 d-none">
+    <div class="card-body text-center p-4">
+      <div class="fs-2">🏸</div>
+      <h2 class="h5 mt-2 mb-1">輸入通關密碼</h2>
+      <p class="text-muted small mb-3">這是我們球友之間共用的密碼,不要外流喔</p>
+      <input type="password" id="password-input" class="form-control mb-2" placeholder="密碼" autocomplete="current-password">
+      <button class="btn btn-primary w-100" id="login-btn">進入</button>
+      <div id="login-error" class="text-danger small mt-2"></div>
+    </div>
+  </div>
+
+  <!-- 主畫面 -->
+  <div id="app-screen" class="d-none">
+    <div class="d-flex justify-content-between align-items-center mt-2 mb-2">
+      <h6 class="text-uppercase text-muted fw-bold mb-0" style="letter-spacing:1px;">已預約時段</h6>
+      <button class="btn btn-outline-secondary btn-sm" id="refresh-btn">↻ 重新整理</button>
+    </div>
+    <div id="bookings-list"></div>
+  </div>
+
+</div>
+
+<!-- 浮動新增按鈕 -->
+<button class="btn btn-primary rounded-circle position-fixed fab d-none" id="open-add-modal"
+        data-bs-toggle="modal" data-bs-target="#addModal">＋</button>
+
+<!-- 新增預約彈跳視窗 -->
+<div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-title">新增預約</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label small text-muted">日期</label>
+          <input type="text" id="input-date" class="form-control" placeholder="選擇日期" readonly>
+        </div>
+        <div class="row">
+          <div class="col-6 mb-3">
+            <label class="form-label small text-muted">開始時間</label>
+            <input type="text" id="input-start" class="form-control" placeholder="選擇時間" readonly>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label small text-muted">結束時間</label>
+            <input type="text" id="input-end" class="form-control" placeholder="選擇時間" readonly>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small text-muted">場地 / 地點</label>
+          <input type="text" id="input-location" class="form-control" placeholder="例如:XX 羽球館 3 號場">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small text-muted">你的名字</label>
+          <input type="text" id="input-name" class="form-control" placeholder="讓大家知道是誰約的">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small text-muted">備註(選填)</label>
+          <input type="text" id="input-note" class="form-control" placeholder="例如:缺兩人 / 雙打">
+        </div>
+        <div id="form-error" class="text-danger small"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary w-100" id="add-btn">新增時段</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 提示訊息 -->
+<div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3" style="z-index:1080;">
+  <div id="toast" class="toast align-items-center text-bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toast-body"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+  // ====== 設定這裡:換成你部署好的 Apps Script Web App URL ======
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwY0BRdfCd-2ztYaMMZVtDllurIcOE2mmZncVWGgOB0qAqB_vIQJ1gxT9Te-0hZdwVQ/exec';
+  // ==============================================================
+
+  const loginScreen = document.getElementById('login-screen');
+  const appScreen = document.getElementById('app-screen');
+  const loadingScreen = document.getElementById('loading-screen');
+  const logoutBtn = document.getElementById('logout-btn');
+  const fabBtn = document.getElementById('open-add-modal');
+
+  // 立刻依照是否已經有存過的密碼(token),決定先顯示「自動登入中」還是登入表單
+  if (localStorage.getItem('bm_token')) {
+    loadingScreen.classList.remove('d-none');
+  } else {
+    loginScreen.classList.remove('d-none');
+  }
+
+  // 日期 / 時間選擇套件 (flatpickr)
+  // disableMobile: true → 手機也一律用 flatpickr 自己的選擇介面,
+  // 因為輸入框是 readonly,手機瀏覽器的原生選擇器沒辦法正常跳出來
+  const datePicker = flatpickr('#input-date', {
+    dateFormat: 'Y-m-d',
+    minDate: 'today',
+    disableMobile: true
+  });
+  const startTimePicker = flatpickr('#input-start', {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: 'H:i',
+    time_24hr: true,
+    minuteIncrement: 15,
+    disableMobile: true
+  });
+  const endTimePicker = flatpickr('#input-end', {
+    enableTime: true,
+    noCalendar: true,
+    dateFormat: 'H:i',
+    time_24hr: true,
+    minuteIncrement: 15,
+    disableMobile: true
+  });
+
+  const addModalEl = document.getElementById('addModal');
+  const addModal = new bootstrap.Modal(addModalEl);
+  const toastEl = document.getElementById('toast');
+
+  let editingId = null;   // 目前正在編輯的預約 id,null 表示是「新增」模式
+  let allBookings = [];   // 最近一次讀到的預約列表,編輯時用來帶入原本的值
+
+  function resetModalToAddMode() {
+    editingId = null;
+    document.getElementById('modal-title').textContent = '新增預約';
+    document.getElementById('add-btn').textContent = '新增時段';
+    document.getElementById('form-error').textContent = '';
+    document.getElementById('input-location').value = '';
+    document.getElementById('input-name').value = '';
+    document.getElementById('input-note').value = '';
+    datePicker.clear();
+    startTimePicker.clear();
+    endTimePicker.clear();
+  }
+
+  // 按浮動按鈕新增時,先重設成「新增」模式,避免殘留上次編輯的資料
+  fabBtn.addEventListener('click', resetModalToAddMode);
+
+  function getToken() { return localStorage.getItem('bm_token'); }
+  function setToken(t) { localStorage.setItem('bm_token', t); }
+  function clearToken() { localStorage.removeItem('bm_token'); }
+
+  // 讓按鈕在等待 Apps Script 回應時顯示轉圈 + 文字,並暫時擋掉重複點擊
+  function setButtonLoading(btnEl, loadingText) {
+    if (!btnEl.dataset.originalText) {
+      btnEl.dataset.originalText = btnEl.textContent;
+    }
+    btnEl.disabled = true;
+    btnEl.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span>${loadingText}`;
+  }
+  function clearButtonLoading(btnEl, overrideText) {
+    btnEl.disabled = false;
+    btnEl.textContent = overrideText || btnEl.dataset.originalText || btnEl.textContent;
+  }
+
+  function showToast(msg) {
+    document.getElementById('toast-body').textContent = msg;
+    bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 2200 }).show();
+  }
+
+  async function callApi(action, params = {}, method = 'GET') {
+    const token = getToken();
+    if (method === 'GET') {
+      const query = new URLSearchParams({ action, token, ...params });
+      const res = await fetch(`${API_URL}?${query.toString()}`);
+      return res.json();
+    } else {
+      const body = new URLSearchParams({ action, token, ...params });
+      const res = await fetch(API_URL, { method: 'POST', body });
+      return res.json();
+    }
+  }
+
+  function enterApp() {
+    loadingScreen.classList.add('d-none');
+    loginScreen.classList.add('d-none');
+    appScreen.classList.remove('d-none');
+    logoutBtn.classList.remove('d-none');
+    fabBtn.classList.remove('d-none');
+    loadBookings();
+  }
+
+  document.getElementById('login-btn').addEventListener('click', async () => {
+    const loginBtn = document.getElementById('login-btn');
+    const pw = document.getElementById('password-input').value.trim();
+    const errorEl = document.getElementById('login-error');
+    errorEl.textContent = '';
+    if (!pw) { errorEl.textContent = '請輸入密碼'; return; }
+
+    setToken(pw);
+    setButtonLoading(loginBtn, '登入中…');
+    const result = await callApi('list');
+    clearButtonLoading(loginBtn);
+
+    if (result.success) {
+      enterApp();
+    } else {
+      clearToken();
+      errorEl.textContent = '密碼錯誤,請再試一次';
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => {
+    clearToken();
+    location.reload();
+  });
+
+  document.getElementById('add-btn').addEventListener('click', async () => {
+    const saveBtn = document.getElementById('add-btn');
+    const date = document.getElementById('input-date').value;
+    const location = document.getElementById('input-location').value.trim();
+    const start = document.getElementById('input-start').value;
+    const end = document.getElementById('input-end').value;
+    const name = document.getElementById('input-name').value.trim();
+    const note = document.getElementById('input-note').value.trim();
+    const errorEl = document.getElementById('form-error');
+    errorEl.textContent = '';
+
+    if (!date || !location || !start || !end || !name) {
+      errorEl.textContent = '請填寫日期、場地、時間與名字';
+      return;
+    }
+    if (end <= start) {
+      errorEl.textContent = '結束時間必須晚於開始時間';
+      return;
+    }
+
+    setButtonLoading(saveBtn, editingId ? '儲存中…' : '新增中…');
+
+    const result = editingId
+      ? await callApi('update', {
+          id: editingId, date, location, startTime: start, endTime: end, name, note
+        }, 'POST')
+      : await callApi('add', {
+          date, location, startTime: start, endTime: end, name, note
+        }, 'POST');
+
+    if (result.success) {
+      showToast(editingId ? '已儲存修改!' : '新增成功!');
+      resetModalToAddMode();
+      clearButtonLoading(saveBtn, '新增時段');
+      addModal.hide();
+      loadBookings();
+    } else {
+      clearButtonLoading(saveBtn, editingId ? '儲存修改' : '新增時段');
+      errorEl.textContent = result.error || '操作失敗';
+    }
+  });
+
+  function editBooking(id) {
+    const booking = allBookings.find(b => b.id === id);
+    if (!booking) return;
+
+    editingId = id;
+    document.getElementById('modal-title').textContent = '編輯預約';
+    document.getElementById('add-btn').textContent = '儲存修改';
+    document.getElementById('form-error').textContent = '';
+    datePicker.setDate(booking.date, true);
+    startTimePicker.setDate(booking.startTime, true);
+    endTimePicker.setDate(booking.endTime, true);
+    document.getElementById('input-location').value = booking.location;
+    document.getElementById('input-name').value = booking.name;
+    document.getElementById('input-note').value = booking.note || '';
+    addModal.show();
+  }
+
+  document.getElementById('refresh-btn').addEventListener('click', async () => {
+    const refreshBtn = document.getElementById('refresh-btn');
+    setButtonLoading(refreshBtn, '重新整理中…');
+    await loadBookings();
+    clearButtonLoading(refreshBtn, '↻ 重新整理');
+  });
+
+  async function deleteBooking(id) {
+    if (!confirm('確定要刪除這個時段嗎?')) return;
+    const result = await callApi('delete', { id }, 'POST');
+    if (result.success) {
+      showToast('已刪除');
+      loadBookings();
+    } else {
+      showToast(result.error || '刪除失敗');
+    }
+  }
+
+  function formatDateLabel(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    const weekDays = ['週日','週一','週二','週三','週四','週五','週六'];
+    const m = d.getMonth() + 1;
+    const day = d.getDate();
+    return { main: `${m}/${day}`, week: weekDays[d.getDay()] };
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // 用「本地時區」算出今天的日期字串,避免 toISOString() 抓到 UTC 日期
+  // (台灣是 UTC+8,半夜 0:00~8:00 之間 UTC 那邊其實還算前一天,會導致日期判斷錯一天)
+  function getLocalTodayStr() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  async function loadBookings() {
+    const listEl = document.getElementById('bookings-list');
+    listEl.innerHTML = '<div class="text-center text-muted py-4 small">載入中…</div>';
+
+    const result = await callApi('list');
+    if (!result.success) {
+      listEl.innerHTML = `<div class="text-center text-muted py-4 small">載入失敗:${result.error || '未知錯誤'}</div>`;
+      return;
+    }
+
+    const bookings = result.data || [];
+    allBookings = bookings;
+    const today = getLocalTodayStr();
+    const upcoming = bookings.filter(b => b.date >= today);
+
+    if (upcoming.length === 0) {
+      listEl.innerHTML = `<div class="text-center text-muted py-5"><div class="fs-2 mb-2">🏸</div>目前還沒有預約,新增第一個時段吧</div>`;
+      return;
+    }
+
+    const grouped = {};
+    upcoming.forEach(b => {
+      if (!grouped[b.date]) grouped[b.date] = [];
+      grouped[b.date].push(b);
+    });
+
+    const dates = Object.keys(grouped).sort();
+    listEl.innerHTML = dates.map(date => {
+      const label = formatDateLabel(date);
+      const slots = grouped[date].map(b => `
+        <div class="card mb-2 slot-card border-start border-warning">
+          <div class="card-body d-flex justify-content-between align-items-center py-2 px-3">
+            <div>
+              <div class="fw-bold">${b.startTime} - ${b.endTime}</div>
+              <div class="small text-muted">${escapeHtml(b.location)} · ${escapeHtml(b.name)}${b.note ? ' · ' + escapeHtml(b.note) : ''}</div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-secondary btn-sm" onclick="editBooking('${b.id}')">編輯</button>
+              <button class="btn btn-outline-danger btn-sm" onclick="deleteBooking('${b.id}')">刪除</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      return `
+        <div class="mb-3">
+          <div class="d-flex align-items-baseline gap-2 mb-2">
+            <span class="fw-bold">${label.main}</span>
+            <span class="small text-muted">${label.week}</span>
+          </div>
+          ${slots}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 自動登入(如果之前已經輸入過密碼)
+  (async function init() {
+    if (getToken()) {
+      const result = await callApi('list');
+      if (result.success) {
+        enterApp();
+        return;
+      }
+      clearToken();
+      loadingScreen.classList.add('d-none');
+      loginScreen.classList.remove('d-none');
+    }
+  })();
+</script>
+
+</body>
+</html>
